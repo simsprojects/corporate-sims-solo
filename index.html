@@ -4958,7 +4958,7 @@
         container.innerHTML = quickActions.map(qa => {
             const action = ACTIONS.find(a => a.id === qa.action);
             const available = !qa.area || (area && (area.type === qa.area || qa.area === null));
-            const disabled = !available || player.currentAction || player.state === 'walking';
+            const disabled = !available; // Only disable if wrong area, not if busy
 
             return `
                 <button class="action-bar-btn" onclick="playerDoAction('${qa.action}')" ${disabled ? 'disabled' : ''}>
@@ -5020,7 +5020,7 @@
 
         // Render action list
         const actionList = document.getElementById('action-list');
-        const isDisabled = player.currentAction || player.state === 'walking';
+        const isDisabled = false; // Actions always clickable — selecting a new one cancels the current
 
         // Area name lookup
         const areaNames = {
