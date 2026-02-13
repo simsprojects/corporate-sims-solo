@@ -945,6 +945,17 @@
         .mp-room-players { font-size: 0.7rem; color: #8899aa; }
         .mp-room-players .count { color: #4ecdc4; font-weight: bold; }
         .mp-no-rooms { font-size: 0.75rem; color: #556677; text-align: center; padding: 10px; }
+        .mp-suggested-rooms { margin-top: 6px; margin-bottom: 12px; }
+        .mp-suggested-label { font-size: 0.65rem; color: #6688aa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .mp-suggested-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .mp-room-chip {
+            padding: 5px 12px; border-radius: 20px; cursor: pointer;
+            font-size: 0.75rem; font-weight: bold; border: 1px solid #3a5a8a;
+            background: linear-gradient(180deg, #1a3a5a 0%, #0f2a4a 100%);
+            color: #8ec8e8; transition: all 0.2s;
+        }
+        .mp-room-chip:hover { border-color: #4ecdc4; color: #4ecdc4; transform: translateY(-1px); background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%); }
+        .mp-room-chip.active { border-color: #4ecdc4; color: #fff; background: linear-gradient(180deg, #2a6a6a 0%, #1a5a5a 100%); }
     </style>
     <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
 </head>
@@ -960,6 +971,19 @@
             <input type="text" id="mp-name" placeholder="Enter your name..." maxlength="12" value="">
             <label for="mp-room">Room Name</label>
             <input type="text" id="mp-room" placeholder="default" maxlength="50" value="default">
+            <div class="mp-suggested-rooms">
+                <div class="mp-suggested-label">Quick Pick a Room</div>
+                <div class="mp-suggested-chips" id="mp-room-chips">
+                    <div class="mp-room-chip active" onclick="pickRoom(this,'default')">🏢 Default</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'brainstorm')">💡 Brainstorm</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'chill-zone')">😎 Chill Zone</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'grind-floor')">💪 Grind Floor</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'the-cafe')">☕ The Cafe</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'corner-office')">👔 Corner Office</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'game-room')">🎮 Game Room</div>
+                    <div class="mp-room-chip" onclick="pickRoom(this,'after-hours')">🌙 After Hours</div>
+                </div>
+            </div>
             <div style="margin-top:8px;">
                 <label>Skin Tone</label>
                 <div class="color-picker" id="mp-skin-picker" style="margin-bottom:8px;">
@@ -5624,7 +5648,34 @@
         gameState.paused = false; // Don't pause in multiplayer, server keeps running
     }
 
+    // Room chip picker
+    function pickRoom(chip, roomName) {
+        document.getElementById('mp-room').value = roomName;
+        // Update active state on chips
+        const chips = document.querySelectorAll('#mp-room-chips .mp-room-chip');
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+    }
+
+    // Also clear active chip when user types a custom room name
+    document.getElementById('mp-room').addEventListener('input', function() {
+        const chips = document.querySelectorAll('#mp-room-chips .mp-room-chip');
+        const val = this.value.trim().toLowerCase();
+        let matched = false;
+        chips.forEach(c => {
+            // Check if typed value matches a chip
+            const chipRoom = c.getAttribute('onclick').match(/'([^']+)'\)/);
+            if (chipRoom && chipRoom[1] === val) {
+                c.classList.add('active');
+                matched = true;
+            } else {
+                c.classList.remove('active');
+            }
+        });
+    });
+
     // Expose lobby functions globally (onclick attributes need them)
+    window.pickRoom = pickRoom;
     window.startOffline = startOffline;
     window.startMultiplayer = startMultiplayer;
 
