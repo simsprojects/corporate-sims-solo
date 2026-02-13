@@ -905,6 +905,22 @@
         }
         .btn-play-offline:hover { transform: translateY(-1px); background: linear-gradient(180deg, #3a5a7a 0%, #2a4a6a 100%); }
         .mp-status { font-size: 0.7rem; color: #4ecdc4; margin-top: 10px; min-height: 1.2em; }
+        .mp-rooms { margin-top: 16px; text-align: left; }
+        .mp-rooms-title { font-size: 0.75rem; color: #4ecdc4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .mp-rooms-list { max-height: 150px; overflow-y: auto; }
+        .mp-rooms-list::-webkit-scrollbar { width: 6px; }
+        .mp-rooms-list::-webkit-scrollbar-thumb { background: #3a5a8a; border-radius: 3px; }
+        .mp-room-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; margin-bottom: 4px; border-radius: 6px; cursor: pointer;
+            background: linear-gradient(180deg, #1a3a5a 0%, #0f2a4a 100%);
+            border: 1px solid #2a4a6a; transition: all 0.2s;
+        }
+        .mp-room-item:hover { border-color: #4ecdc4; transform: translateX(3px); }
+        .mp-room-name { font-size: 0.85rem; color: white; font-weight: bold; }
+        .mp-room-players { font-size: 0.7rem; color: #8899aa; }
+        .mp-room-players .count { color: #4ecdc4; font-weight: bold; }
+        .mp-no-rooms { font-size: 0.75rem; color: #556677; text-align: center; padding: 10px; }
     </style>
     <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
 </head>
@@ -918,6 +934,12 @@
             <input type="text" id="mp-name" placeholder="Enter your name..." maxlength="12" value="">
             <label for="mp-room">Room Name</label>
             <input type="text" id="mp-room" placeholder="default" maxlength="50" value="default">
+            <div class="mp-rooms" id="mp-rooms">
+                <div class="mp-rooms-title">🌐 Active Rooms</div>
+                <div class="mp-rooms-list" id="mp-rooms-list">
+                    <div class="mp-no-rooms">Loading rooms...</div>
+                </div>
+            </div>
             <div class="mp-lobby-btns">
                 <button class="btn-play-offline" onclick="startOffline()">Play Offline</button>
                 <button class="btn-join-online" onclick="startMultiplayer()">Join Online</button>
@@ -5151,6 +5173,37 @@
 
     // ==================== MULTIPLAYER FUNCTIONS ====================
 
+    function fetchRoomsList() {
+        const listEl = document.getElementById('mp-rooms-list');
+        if (!listEl) return;
+
+        fetch('/api/rooms')
+            .then(r => r.json())
+            .then(data => {
+                const rooms = data.rooms || [];
+                if (rooms.length === 0) {
+                    listEl.innerHTML = '<div class="mp-no-rooms">No active rooms — create one by typing a room name and clicking Join Online!</div>';
+                    return;
+                }
+                listEl.innerHTML = rooms.map(room => {
+                    const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][(room.day - 1) % 5] || 'Day';
+                    const h = Math.floor(room.time / 60);
+                    const m = Math.floor(room.time % 60);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const dh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                    const timeStr = dh + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+                    return '<div class="mp-room-item" onclick="document.getElementById(\'mp-room\').value=\'' + room.id + '\'">' +
+                        '<div><div class="mp-room-name">' + room.id + '</div>' +
+                        '<div class="mp-room-players">' + dayName + ' ' + timeStr + '</div></div>' +
+                        '<div class="mp-room-players"><span class="count">' + room.playerCount + '</span> / ' + room.maxPlayers + ' players</div>' +
+                        '</div>';
+                }).join('');
+            })
+            .catch(() => {
+                listEl.innerHTML = '<div class="mp-no-rooms">Could not load rooms — server may be starting up</div>';
+            });
+    }
+
     function startOffline() {
         document.getElementById('mp-lobby-overlay').style.display = 'none';
         init();
@@ -5427,6 +5480,13 @@
         init();
     } else {
         document.getElementById('mp-lobby-overlay').style.display = 'flex';
+        fetchRoomsList();
+        // Refresh room list every 5 seconds while lobby is visible
+        setInterval(() => {
+            if (document.getElementById('mp-lobby-overlay').style.display !== 'none') {
+                fetchRoomsList();
+            }
+        }, 5000);
     }
     </script>
 </body>
