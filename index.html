@@ -861,6 +861,30 @@
             pointer-events: none;
             z-index: 50;
         }
+        /* ==================== SAVE INDICATOR ==================== */
+        .save-toast {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(46, 204, 113, 0.9);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 9998;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+        .save-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .save-toast.error {
+            background: rgba(231, 76, 60, 0.9);
+        }
         /* ==================== MULTIPLAYER LOBBY ==================== */
         .mp-lobby-overlay {
             display: none;
@@ -925,6 +949,8 @@
     <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
 </head>
 <body>
+    <!-- SAVE INDICATOR TOAST -->
+    <div id="save-toast" class="save-toast">Game Saved!</div>
     <!-- MULTIPLAYER LOBBY OVERLAY -->
     <div class="mp-lobby-overlay" id="mp-lobby-overlay">
         <div class="mp-lobby-box">
@@ -1470,116 +1496,181 @@
     const SAVE_KEY = 'corporate-sims-save';
     let lastSaveTime = 0;
     const SAVE_INTERVAL = 10000; // Auto-save every 10 seconds
+    let saveToastTimer = null;
+
+    function showSaveToast(message, isError) {
+        const toast = document.getElementById('save-toast');
+        if (!toast) return;
+        toast.textContent = message || 'Game Saved!';
+        toast.className = 'save-toast show' + (isError ? ' error' : '');
+        clearTimeout(saveToastTimer);
+        saveToastTimer = setTimeout(() => {
+            toast.className = 'save-toast';
+        }, 2000);
+    }
 
     function serializeCharacter(char) {
         // Convert relationships Map to plain object
         const rels = {};
         if (char.memory && char.memory.relationships) {
             for (const [k, v] of char.memory.relationships) {
-                rels[k] = { ...v };
+                try { rels[k] = { ...v }; } catch(e) { /* skip bad rel */ }
             }
         }
         return {
-            id: char.id, name: char.name, isPlayer: char.isPlayer,
-            x: char.x, y: char.y, role: char.role,
-            appearance: { ...char.appearance },
+            id: char.id || 'unknown',
+            name: char.name || 'Unknown',
+            isPlayer: !!char.isPlayer,
+            x: char.x || 300,
+            y: char.y || 300,
+            role: char.role || 'Employee',
+            appearance: {
+                skinTone: (char.appearance && char.appearance.skinTone) || '#f5d0b0',
+                hairColor: (char.appearance && char.appearance.hairColor) || '#2a1a0a',
+                hairStyle: (char.appearance && char.appearance.hairStyle) || 'short',
+                shirtColor: (char.appearance && char.appearance.shirtColor) || '#3498db',
+                pantsColor: (char.appearance && char.appearance.pantsColor) || '#2c3e50',
+                eyeColor: (char.appearance && char.appearance.eyeColor) || '#4a3a2a'
+            },
             personality: {
-                openness: char.personality.openness,
-                conscientiousness: char.personality.conscientiousness,
-                extraversion: char.personality.extraversion,
-                agreeableness: char.personality.agreeableness,
-                neuroticism: char.personality.neuroticism
+                openness: (char.personality && char.personality.openness) || 0.5,
+                conscientiousness: (char.personality && char.personality.conscientiousness) || 0.5,
+                extraversion: (char.personality && char.personality.extraversion) || 0.5,
+                agreeableness: (char.personality && char.personality.agreeableness) || 0.5,
+                neuroticism: (char.personality && char.personality.neuroticism) || 0.5
             },
             needs: {
-                hunger: char.needs.hunger, energy: char.needs.energy,
-                social: char.needs.social, comfort: char.needs.comfort,
-                fun: char.needs.fun, hygiene: char.needs.hygiene,
-                bladder: char.needs.bladder
+                hunger: (char.needs && char.needs.hunger) != null ? char.needs.hunger : 80,
+                energy: (char.needs && char.needs.energy) != null ? char.needs.energy : 80,
+                social: (char.needs && char.needs.social) != null ? char.needs.social : 60,
+                comfort: (char.needs && char.needs.comfort) != null ? char.needs.comfort : 70,
+                fun: (char.needs && char.needs.fun) != null ? char.needs.fun : 60,
+                hygiene: (char.needs && char.needs.hygiene) != null ? char.needs.hygiene : 90,
+                bladder: (char.needs && char.needs.bladder) != null ? char.needs.bladder : 80
             },
             emotions: {
-                happiness: char.emotions.happiness, anger: char.emotions.anger,
-                sadness: char.emotions.sadness, anxiety: char.emotions.anxiety,
-                boredom: char.emotions.boredom, excitement: char.emotions.excitement
+                happiness: (char.emotions && char.emotions.happiness) != null ? char.emotions.happiness : 60,
+                anger: (char.emotions && char.emotions.anger) != null ? char.emotions.anger : 10,
+                sadness: (char.emotions && char.emotions.sadness) != null ? char.emotions.sadness : 10,
+                anxiety: (char.emotions && char.emotions.anxiety) != null ? char.emotions.anxiety : 20,
+                boredom: (char.emotions && char.emotions.boredom) != null ? char.emotions.boredom : 30,
+                excitement: (char.emotions && char.emotions.excitement) != null ? char.emotions.excitement : 40
             },
-            slackPoints: char.slackPoints,
+            slackPoints: char.slackPoints || 0,
             relationships: rels,
-            shortTermMemory: char.memory.shortTerm.slice(0, 10),
-            longTermMemory: char.memory.longTerm.slice(0, 20)
+            shortTermMemory: (char.memory && char.memory.shortTerm) ? char.memory.shortTerm.slice(0, 10) : [],
+            longTermMemory: (char.memory && char.memory.longTerm) ? char.memory.longTerm.slice(0, 20) : []
         };
     }
 
     function deserializeCharacter(data) {
-        const char = new Character({
-            id: data.id, name: data.name, isPlayer: data.isPlayer,
-            x: data.x, y: data.y, role: data.role,
-            skinTone: data.appearance.skinTone,
-            hairColor: data.appearance.hairColor,
-            hairStyle: data.appearance.hairStyle,
-            shirtColor: data.appearance.shirtColor,
-            pantsColor: data.appearance.pantsColor,
-            eyeColor: data.appearance.eyeColor,
-            personality: data.personality
-        });
-        // Restore needs
-        if (data.needs) {
-            char.needs.hunger = data.needs.hunger;
-            char.needs.energy = data.needs.energy;
-            char.needs.social = data.needs.social;
-            char.needs.comfort = data.needs.comfort;
-            char.needs.fun = data.needs.fun;
-            char.needs.hygiene = data.needs.hygiene;
-            char.needs.bladder = data.needs.bladder;
+        if (!data || !data.id) {
+            console.warn('[Load] Skipping invalid character data:', data);
+            return null;
         }
-        // Restore emotions
-        if (data.emotions) {
-            char.emotions.happiness = data.emotions.happiness;
-            char.emotions.anger = data.emotions.anger;
-            char.emotions.sadness = data.emotions.sadness;
-            char.emotions.anxiety = data.emotions.anxiety;
-            char.emotions.boredom = data.emotions.boredom;
-            char.emotions.excitement = data.emotions.excitement;
-        }
-        // Restore stats
-        char.slackPoints = data.slackPoints || 0;
-        // Restore relationships
-        if (data.relationships) {
-            for (const [k, v] of Object.entries(data.relationships)) {
-                char.memory.relationships.set(k, v);
+        try {
+            const appearance = data.appearance || {};
+            const char = new Character({
+                id: data.id,
+                name: data.name || 'Unknown',
+                isPlayer: !!data.isPlayer,
+                x: data.x || 300,
+                y: data.y || 300,
+                role: data.role || 'Employee',
+                skinTone: appearance.skinTone || '#f5d0b0',
+                hairColor: appearance.hairColor || '#2a1a0a',
+                hairStyle: appearance.hairStyle || 'short',
+                shirtColor: appearance.shirtColor || '#3498db',
+                pantsColor: appearance.pantsColor || '#2c3e50',
+                eyeColor: appearance.eyeColor || '#4a3a2a',
+                personality: data.personality || {}
+            });
+            // Restore needs
+            if (data.needs) {
+                if (data.needs.hunger != null) char.needs.hunger = data.needs.hunger;
+                if (data.needs.energy != null) char.needs.energy = data.needs.energy;
+                if (data.needs.social != null) char.needs.social = data.needs.social;
+                if (data.needs.comfort != null) char.needs.comfort = data.needs.comfort;
+                if (data.needs.fun != null) char.needs.fun = data.needs.fun;
+                if (data.needs.hygiene != null) char.needs.hygiene = data.needs.hygiene;
+                if (data.needs.bladder != null) char.needs.bladder = data.needs.bladder;
             }
+            // Restore emotions
+            if (data.emotions) {
+                if (data.emotions.happiness != null) char.emotions.happiness = data.emotions.happiness;
+                if (data.emotions.anger != null) char.emotions.anger = data.emotions.anger;
+                if (data.emotions.sadness != null) char.emotions.sadness = data.emotions.sadness;
+                if (data.emotions.anxiety != null) char.emotions.anxiety = data.emotions.anxiety;
+                if (data.emotions.boredom != null) char.emotions.boredom = data.emotions.boredom;
+                if (data.emotions.excitement != null) char.emotions.excitement = data.emotions.excitement;
+            }
+            // Restore stats
+            char.slackPoints = data.slackPoints || 0;
+            // Restore relationships
+            if (data.relationships && typeof data.relationships === 'object') {
+                for (const [k, v] of Object.entries(data.relationships)) {
+                    char.memory.relationships.set(k, v);
+                }
+            }
+            // Restore memories
+            if (Array.isArray(data.shortTermMemory)) char.memory.shortTerm = data.shortTermMemory;
+            if (Array.isArray(data.longTermMemory)) char.memory.longTerm = data.longTermMemory;
+            return char;
+        } catch (e) {
+            console.warn('[Load] Failed to deserialize character "' + (data.name || data.id) + '":', e.message);
+            return null;
         }
-        // Restore memories
-        if (data.shortTermMemory) char.memory.shortTerm = data.shortTermMemory;
-        if (data.longTermMemory) char.memory.longTerm = data.longTermMemory;
-        return char;
     }
 
-    function saveGame() {
+    function saveGame(showToast) {
+        if (multiplayerMode) return; // Never save in multiplayer
+        if (!gameState.characters || gameState.characters.length === 0) return;
         try {
+            const serialized = [];
+            for (const c of gameState.characters) {
+                try {
+                    serialized.push(serializeCharacter(c));
+                } catch (e) {
+                    console.warn('[Save] Failed to serialize "' + (c.name || c.id) + '":', e.message);
+                }
+            }
+            if (serialized.length === 0) return;
             const save = {
                 version: 1,
                 timestamp: Date.now(),
                 gameState: {
-                    day: gameState.day,
-                    time: gameState.time,
-                    speed: gameState.speed
+                    day: gameState.day || 1,
+                    time: gameState.time || 540,
+                    speed: gameState.speed || 0.5
                 },
-                characters: gameState.characters.map(c => serializeCharacter(c))
+                characters: serialized
             };
-            localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+            const json = JSON.stringify(save);
+            localStorage.setItem(SAVE_KEY, json);
+            console.log('[Save] Saved ' + serialized.length + ' characters (' + (json.length / 1024).toFixed(1) + 'KB)');
+            if (showToast) showSaveToast('Game Saved! (' + serialized.length + ' characters)');
         } catch (e) {
-            console.warn('[Save] Failed:', e.message);
+            console.error('[Save] FAILED:', e.message);
+            showSaveToast('Save failed! ' + e.message, true);
         }
     }
 
     function loadGame() {
         try {
             const raw = localStorage.getItem(SAVE_KEY);
-            if (!raw) return null;
+            if (!raw) {
+                console.log('[Load] No saved game found');
+                return null;
+            }
             const save = JSON.parse(raw);
-            if (!save || !save.characters || save.characters.length === 0) return null;
+            if (!save || !save.characters || !Array.isArray(save.characters) || save.characters.length === 0) {
+                console.log('[Load] Save data empty or invalid');
+                return null;
+            }
+            console.log('[Load] Found save with ' + save.characters.length + ' characters from ' + new Date(save.timestamp).toLocaleString());
             return save;
         } catch (e) {
-            console.warn('[Load] Failed:', e.message);
+            console.error('[Load] Failed to parse save:', e.message);
             return null;
         }
     }
@@ -1593,8 +1684,12 @@
 
     // Save on page close
     window.addEventListener('beforeunload', () => {
-        if (!multiplayerMode && gameState.characters.length > 0) {
-            saveGame();
+        if (!multiplayerMode && gameState.characters && gameState.characters.length > 0) {
+            try { localStorage.setItem(SAVE_KEY, JSON.stringify({
+                version: 1, timestamp: Date.now(),
+                gameState: { day: gameState.day, time: gameState.time, speed: gameState.speed },
+                characters: gameState.characters.map(c => serializeCharacter(c))
+            })); } catch(e) { /* last-ditch save attempt */ }
         }
     });
 
@@ -4981,8 +5076,7 @@
         closeCharacterCreator();
         renderCharacterList();
         if (!multiplayerMode) {
-            saveGame();
-            console.log('[Save] Character "' + name + '" saved!');
+            saveGame(true);
         }
 
         // Show welcome message
@@ -5179,16 +5273,31 @@
 
     function init() {
         // Try loading saved game first
-        const save = loadGame();
-        if (save && save.characters && save.characters.length > 0) {
-            console.log('[Init] Loading saved game (' + save.characters.length + ' characters)');
-            gameState.characters = save.characters.map(c => deserializeCharacter(c));
-            gameState.day = save.gameState.day || 1;
-            gameState.time = save.gameState.time || 540;
-            gameState.speed = save.gameState.speed || 0.5;
-        } else {
-            // No save — create from defaults
+        let loadedFromSave = false;
+        try {
+            const save = loadGame();
+            if (save && save.characters && save.characters.length > 0) {
+                console.log('[Init] Loading saved game (' + save.characters.length + ' characters)');
+                const loaded = save.characters.map(c => deserializeCharacter(c)).filter(c => c !== null);
+                if (loaded.length > 0) {
+                    gameState.characters = loaded;
+                    gameState.day = (save.gameState && save.gameState.day) || 1;
+                    gameState.time = (save.gameState && save.gameState.time) || 540;
+                    gameState.speed = (save.gameState && save.gameState.speed) || 0.5;
+                    loadedFromSave = true;
+                    console.log('[Init] Successfully loaded ' + loaded.length + ' characters from save');
+                    setTimeout(() => showSaveToast('Loaded ' + loaded.length + ' saved characters!'), 500);
+                } else {
+                    console.warn('[Init] All characters failed to deserialize, using defaults');
+                }
+            }
+        } catch (e) {
+            console.error('[Init] Failed to load save:', e.message);
+        }
+        if (!loadedFromSave) {
+            // No save or failed to load — create from defaults
             gameState.characters = CHARACTER_CONFIGS.map(config => new Character(config));
+            console.log('[Init] Created ' + gameState.characters.length + ' default characters');
         }
 
         // Select player by default
