@@ -1,0 +1,4893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hard Workers Finish Last - The Art of Looking Busy</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a12;
+            color: white;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .game-wrapper {
+            display: grid;
+            grid-template-columns: 260px 1fr 280px;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            gap: 8px;
+            padding: 8px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0a0a1a 100%);
+        }
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, #2a3a5a 0%, #1a2a4a 100%);
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 2px solid #3a5a8a;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .header h1 {
+            font-size: 1.4rem;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4ecdc4;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #4ecdc4;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .time-info {
+            font-size: 1.1rem;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 15px;
+            border-radius: 20px;
+            border: 1px solid #3a5a8a;
+        }
+        .time-info #day-display {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .time-info #time-display {
+            color: #ffd700;
+        }
+        .speed-controls {
+            display: flex;
+            gap: 4px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .speed-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%);
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .speed-btn:hover {
+            background: linear-gradient(180deg, #3a5a7a 0%, #2a4a6a 100%);
+            transform: translateY(-1px);
+        }
+        .speed-btn.active {
+            background: linear-gradient(180deg, #e94560 0%, #c73550 100%);
+            border-color: #ff6b8a;
+            box-shadow: 0 0 10px rgba(233,69,96,0.5);
+        }
+
+        /* Panels - Game UI Style */
+        .panel {
+            background: linear-gradient(180deg, #1a2a4a 0%, #0f1f3a 100%);
+            border-radius: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            border: 2px solid #2a4a6a;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .panel::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+        .panel::-webkit-scrollbar-thumb {
+            background: #3a5a8a;
+            border-radius: 4px;
+        }
+        .panel h2 {
+            font-size: 0.9rem;
+            color: #4ecdc4;
+            border-bottom: 2px solid #2a4a6a;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Character Selection Card - Game Style */
+        .char-card {
+            background: linear-gradient(180deg, #1a3a5a 0%, #0f2a4a 100%);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            border: 2px solid #2a4a6a;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .char-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        }
+        .char-card:hover {
+            border-color: #4ecdc4;
+            transform: translateX(3px);
+            box-shadow: 0 0 15px rgba(78,205,196,0.3);
+        }
+        .char-card.selected {
+            border-color: #4ecdc4;
+            background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%);
+            box-shadow: 0 0 20px rgba(78,205,196,0.4), inset 0 0 30px rgba(78,205,196,0.1);
+        }
+        .char-card.selected::after {
+            content: '▶';
+            position: absolute;
+            left: -2px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4ecdc4;
+            font-size: 0.8rem;
+        }
+        .char-header { display: flex; gap: 8px; align-items: flex-start; }
+        .char-portrait {
+            width: 45px;
+            height: 50px;
+            background: linear-gradient(180deg, #0a1a2a 0%, #051525 100%);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #2a4a6a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .char-portrait span {
+            font-size: 22px !important;
+            position: static !important;
+        }
+        .char-info { flex: 1; min-width: 0; }
+        .char-info h3 {
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .char-info .role {
+            font-size: 0.65rem;
+            color: #8899aa;
+            background: rgba(0,0,0,0.3);
+            padding: 1px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .char-info .mood {
+            font-size: 0.6rem;
+            margin-top: 3px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(0,0,0,0.2);
+        }
+        .char-info .thought {
+            font-size: 0.55rem;
+            color: #ffd700;
+            font-style: italic;
+            margin-top: 3px;
+            max-width: 130px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Needs Bars - Sims Style */
+        .needs-mini { margin-top: 6px; }
+        .need-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+            font-size: 0.55rem;
+        }
+        .need-icon { width: 14px; font-size: 0.6rem; }
+        .need-bar {
+            flex: 1;
+            height: 8px;
+            background: linear-gradient(180deg, #0a1a2a 0%, #051525 100%);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 3px;
+            border: 1px solid #2a4a6a;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .need-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s, background 0.3s;
+            box-shadow: 0 0 4px currentColor;
+        }
+        .need-fill.critical {
+            animation: critical-pulse 0.5s infinite;
+        }
+        @keyframes critical-pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px #ff0000; }
+            50% { opacity: 0.6; box-shadow: 0 0 4px #ff0000; }
+        }
+
+        /* Office Canvas - Main Game View */
+        .office-panel {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #1a2a4a 0%, #0f1f3a 100%);
+            border-radius: 10px;
+            border: 3px solid #2a4a6a;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.6), inset 0 0 50px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .office-panel::before {
+            content: 'OFFICE VIEW';
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 0.65rem;
+            color: rgba(78,205,196,0.5);
+            letter-spacing: 2px;
+            z-index: 10;
+            text-transform: uppercase;
+        }
+        #office-canvas {
+            flex: 1;
+            background: transparent;
+            cursor: crosshair;
+        }
+
+        /* Action Panel - Game Style */
+        .action-queue {
+            background: linear-gradient(180deg, #0a1a2a 0%, #051525 100%);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 10px;
+            min-height: 50px;
+            border: 1px solid #2a4a6a;
+        }
+        .queue-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            background: linear-gradient(90deg, #1a4a6a 0%, #1a3a5a 100%);
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            border-left: 3px solid #4ecdc4;
+            animation: queue-pulse 2s infinite;
+        }
+        @keyframes queue-pulse {
+            0%, 100% { border-left-color: #4ecdc4; }
+            50% { border-left-color: #2a9a8a; }
+        }
+        .queue-item .progress {
+            width: 50px;
+            height: 6px;
+            background: #0a1a2a;
+            border-radius: 3px;
+            margin-left: auto;
+            overflow: hidden;
+            border: 1px solid #2a4a6a;
+        }
+        .queue-item .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #2ecc71);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+        .action-btn {
+            padding: 8px 6px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.7rem;
+            background: linear-gradient(180deg, #1a4a6a 0%, #0f3a5a 100%);
+            color: white;
+            transition: all 0.2s;
+            border: 1px solid #2a5a8a;
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.3s;
+        }
+        .action-btn:hover:not(:disabled)::after {
+            left: 100%;
+        }
+        .action-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #2a5a8a 0%, #1a4a6a 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(50%);
+        }
+        .action-btn .name {
+            font-weight: bold;
+            display: block;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .action-btn .score {
+            font-size: 0.55rem;
+            color: #4ecdc4;
+            background: rgba(0,0,0,0.3);
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        /* Relationship Panel */
+        .relationship-item {
+            display: flex;
+            align-items: center;
+            padding: 6px;
+            background: #1a3a5a;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+        }
+        .rel-bar {
+            flex: 1;
+            height: 8px;
+            background: #0a1a2a;
+            border-radius: 4px;
+            margin: 0 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .rel-fill {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            border-radius: 4px;
+        }
+        .rel-fill.positive { background: #4ecdc4; left: 50%; }
+        .rel-fill.negative { background: #e94560; right: 50%; }
+
+        /* Memory Log */
+        .memory-log {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #0a1a2a;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.65rem;
+        }
+        .memory-item {
+            padding: 4px 0;
+            border-bottom: 1px solid #1a3a5a;
+        }
+        .memory-item .time { color: #00d9ff; }
+        .memory-item.positive { border-left: 2px solid #4ecdc4; padding-left: 6px; }
+        .memory-item.negative { border-left: 2px solid #e94560; padding-left: 6px; }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            max-width: 150px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 100;
+            animation: bubblePop 0.3s ease-out;
+            pointer-events: none;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: white;
+        }
+        @keyframes bubblePop {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Emotion Indicator */
+        .emotion-indicator {
+            position: absolute;
+            font-size: 1.2rem;
+            animation: float 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Stats Display */
+        .stat-section { margin-bottom: 15px; }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            padding: 3px 0;
+        }
+        .personality-traits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .trait-badge {
+            padding: 2px 6px;
+            background: #2a4a6a;
+            border-radius: 4px;
+            font-size: 0.6rem;
+        }
+
+        /* Header Buttons */
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .header-btn {
+            padding: 8px 16px;
+            background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%);
+            border: 2px solid #2ecc71;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .header-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46,204,113,0.4);
+        }
+
+        /* Player Action Bar */
+        .player-action-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, rgba(30,50,80,0.95) 0%, rgba(15,30,50,0.95) 100%);
+            border: 2px solid #3a6a9a;
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .action-bar-title {
+            font-size: 0.65rem;
+            color: #4ecdc4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .action-bar-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        .action-bar-btn {
+            padding: 10px 14px;
+            background: linear-gradient(180deg, #2a5a8a 0%, #1a4a6a 100%);
+            border: 2px solid #3a7aaa;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.7rem;
+            min-width: 70px;
+            text-align: center;
+        }
+        .action-bar-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #3a7aaa 0%, #2a5a8a 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(78,205,196,0.3);
+        }
+        .action-bar-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .action-bar-btn .icon { font-size: 1.2rem; display: block; }
+        .action-bar-btn .label { font-size: 0.6rem; margin-top: 2px; }
+
+        /* Action Menu Panel */
+        .action-menu {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .action-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .action-menu-title {
+            font-size: 0.9rem;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .action-category-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .action-category-tab {
+            padding: 6px 10px;
+            font-size: 0.7rem;
+            background: #1a3a5a;
+            border: 1px solid #2a4a6a;
+            border-radius: 15px;
+            color: #8899aa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-category-tab:hover {
+            background: #2a4a6a;
+            color: #fff;
+        }
+        .action-category-tab.active {
+            background: linear-gradient(180deg, #e94560 0%, #c73550 100%);
+            border-color: #ff6b8a;
+            color: white;
+        }
+        .action-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .action-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .action-list::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+        .action-list::-webkit-scrollbar-thumb {
+            background: #3a5a7a;
+            border-radius: 3px;
+        }
+        .action-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: linear-gradient(180deg, #1a3a5a 0%, #0f2a4a 100%);
+            border: 1px solid #2a4a6a;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-item:hover:not(.disabled) {
+            background: linear-gradient(180deg, #2a5a8a 0%, #1a4a6a 100%);
+            border-color: #4ecdc4;
+            transform: translateX(3px);
+        }
+        .action-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .action-item.needs-move {
+            border-left: 3px solid #ffd700;
+        }
+        .action-item.needs-move .action-item-name {
+            color: #ffd700;
+        }
+        .action-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .action-item-name {
+            font-size: 0.8rem;
+            color: #fff;
+        }
+        .action-item-desc {
+            font-size: 0.6rem;
+            color: #6a7a8a;
+        }
+        .action-item-points {
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        .action-item-points.positive {
+            background: rgba(39,174,96,0.3);
+            color: #27ae60;
+        }
+        .action-item-points.negative {
+            background: rgba(233,69,96,0.3);
+            color: #e94560;
+        }
+        .action-item-points.neutral {
+            background: rgba(255,215,0,0.3);
+            color: #ffd700;
+        }
+        .current-action-display {
+            background: rgba(78,205,196,0.1);
+            border: 1px solid #4ecdc4;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .current-action-label {
+            font-size: 0.65rem;
+            color: #4ecdc4;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .current-action-name {
+            font-size: 0.9rem;
+            color: #fff;
+        }
+        .current-action-progress {
+            height: 4px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .current-action-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #27ae60);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        .location-indicator {
+            font-size: 0.7rem;
+            color: #ffd700;
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: linear-gradient(180deg, #1a2a4a 0%, #0f1a2a 100%);
+            border: 3px solid #3a6a9a;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+        }
+        .modal-content h2 {
+            color: #4ecdc4;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        .creator-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .creator-section {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .creator-section label {
+            display: block;
+            color: #8899aa;
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .creator-section input[type="text"],
+        .creator-section select {
+            width: 100%;
+            padding: 8px 12px;
+            background: #0a1a2a;
+            border: 2px solid #2a4a6a;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .creator-section input:focus,
+        .creator-section select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+        .color-picker, .style-picker {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.selected { border-color: #4ecdc4; box-shadow: 0 0 10px #4ecdc4; }
+        .style-option {
+            padding: 6px 12px;
+            background: #1a3a5a;
+            border: 2px solid #2a4a6a;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: #aaa;
+            transition: all 0.2s;
+        }
+        .style-option:hover { background: #2a4a6a; }
+        .style-option.selected { border-color: #4ecdc4; color: #4ecdc4; background: #1a4a6a; }
+        .personality-sliders {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+            color: #888;
+        }
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: #4ecdc4;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .modal-btn.cancel {
+            background: #555;
+            color: #aaa;
+        }
+        .modal-btn.cancel:hover { background: #666; }
+        .modal-btn.confirm {
+            background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%);
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46,204,113,0.4);
+        }
+
+        /* Interactive object highlights */
+        .interactive-hint {
+            position: absolute;
+            background: rgba(78,205,196,0.9);
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <header class="header">
+            <h1>🎬 Hard Workers Finish Last</h1>
+            <div class="time-info">
+                <span id="day-display">Day 1</span> •
+                <span id="time-display">9:00 AM</span>
+            </div>
+            <div class="header-buttons">
+                <button class="header-btn" onclick="openCharacterCreator()">➕ Add Employee</button>
+                <div class="speed-controls">
+                    <button class="speed-btn" onclick="setSpeed(0)">⏸</button>
+                    <button class="speed-btn active" onclick="setSpeed(0.5)">▶</button>
+                    <button class="speed-btn" onclick="setSpeed(1)">▶▶</button>
+                    <button class="speed-btn" onclick="setSpeed(2)">▶▶▶</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="panel" id="left-panel">
+            <h2>👥 Characters</h2>
+            <div id="character-list"></div>
+        </div>
+
+        <div class="panel office-panel">
+            <canvas id="office-canvas"></canvas>
+            <!-- Player Action Bar -->
+            <div class="player-action-bar" id="player-action-bar">
+                <div class="action-bar-title">Quick Actions</div>
+                <div class="action-bar-buttons" id="action-bar-buttons"></div>
+            </div>
+        </div>
+
+        <div class="panel" id="right-panel">
+            <!-- Player Actions Menu -->
+            <div id="player-actions-panel">
+                <h2>🎯 Actions</h2>
+                <div class="location-indicator" id="location-indicator">📍 Location: Unknown</div>
+                <div class="current-action-display" id="current-action-display" style="display:none;">
+                    <div class="current-action-label">Currently Doing</div>
+                    <div class="current-action-name" id="current-action-name">Nothing</div>
+                    <div class="current-action-progress">
+                        <div class="current-action-progress-bar" id="current-action-progress" style="width:0%"></div>
+                    </div>
+                </div>
+                <div class="action-menu">
+                    <div class="action-category-tabs" id="action-category-tabs">
+                        <button class="action-category-tab active" data-category="all">All</button>
+                        <button class="action-category-tab" data-category="slack">😎 Slack</button>
+                        <button class="action-category-tab" data-category="work">💼 Work</button>
+                        <button class="action-category-tab" data-category="fun">🎮 Fun</button>
+                        <button class="action-category-tab" data-category="social">💬 Social</button>
+                        <button class="action-category-tab" data-category="need">🍕 Needs</button>
+                        <button class="action-category-tab" data-category="chaos">🔥 Chaos</button>
+                        <button class="action-category-tab" data-category="emotional">😭 Feels</button>
+                    </div>
+                    <div class="action-list" id="action-list"></div>
+                </div>
+            </div>
+            <div id="selected-char-panel" style="margin-top:15px;">
+                <h2>📊 Character Details</h2>
+                <p style="color:#888;font-size:0.8rem;">Click a character to view details</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Character Creator Modal -->
+    <div class="modal-overlay" id="character-creator-modal" style="display:none;">
+        <div class="modal-content">
+            <h2>🎨 Create New Employee</h2>
+            <div class="creator-grid">
+                <div class="creator-section">
+                    <label>Name</label>
+                    <input type="text" id="new-char-name" placeholder="Enter name..." maxlength="12">
+                </div>
+                <div class="creator-section">
+                    <label>Role</label>
+                    <select id="new-char-role">
+                        <option value="Intern">Intern</option>
+                        <option value="Sales Rep">Sales Rep</option>
+                        <option value="Accountant">Accountant</option>
+                        <option value="Developer">Developer</option>
+                        <option value="HR Rep">HR Rep</option>
+                        <option value="Designer">Designer</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Temp">Temp</option>
+                    </select>
+                </div>
+                <div class="creator-section">
+                    <label>Skin Tone</label>
+                    <div class="color-picker" id="skin-picker">
+                        <div class="color-option selected" data-color="#f5e0c0" style="background:#f5e0c0"></div>
+                        <div class="color-option" data-color="#f5d0b0" style="background:#f5d0b0"></div>
+                        <div class="color-option" data-color="#deb887" style="background:#deb887"></div>
+                        <div class="color-option" data-color="#c68642" style="background:#c68642"></div>
+                        <div class="color-option" data-color="#8d5524" style="background:#8d5524"></div>
+                        <div class="color-option" data-color="#6B4423" style="background:#6B4423"></div>
+                    </div>
+                </div>
+                <div class="creator-section">
+                    <label>Hair Style</label>
+                    <div class="style-picker" id="hair-style-picker">
+                        <div class="style-option selected" data-style="short">Short</div>
+                        <div class="style-option" data-style="spiky">Spiky</div>
+                        <div class="style-option" data-style="bob">Bob</div>
+                        <div class="style-option" data-style="long">Long</div>
+                        <div class="style-option" data-style="curly">Curly</div>
+                        <div class="style-option" data-style="bald">Bald</div>
+                    </div>
+                </div>
+                <div class="creator-section">
+                    <label>Hair Color</label>
+                    <div class="color-picker" id="hair-color-picker">
+                        <div class="color-option selected" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+                        <div class="color-option" data-color="#3a2a1a" style="background:#3a2a1a"></div>
+                        <div class="color-option" data-color="#8B4513" style="background:#8B4513"></div>
+                        <div class="color-option" data-color="#d4a84b" style="background:#d4a84b"></div>
+                        <div class="color-option" data-color="#c94420" style="background:#c94420"></div>
+                        <div class="color-option" data-color="#888888" style="background:#888888"></div>
+                    </div>
+                </div>
+                <div class="creator-section">
+                    <label>Shirt Color</label>
+                    <div class="color-picker" id="shirt-picker">
+                        <div class="color-option selected" data-color="#3498db" style="background:#3498db"></div>
+                        <div class="color-option" data-color="#e94560" style="background:#e94560"></div>
+                        <div class="color-option" data-color="#27ae60" style="background:#27ae60"></div>
+                        <div class="color-option" data-color="#9b59b6" style="background:#9b59b6"></div>
+                        <div class="color-option" data-color="#f39c12" style="background:#f39c12"></div>
+                        <div class="color-option" data-color="#1abc9c" style="background:#1abc9c"></div>
+                        <div class="color-option" data-color="#e74c3c" style="background:#e74c3c"></div>
+                        <div class="color-option" data-color="#95a5a6" style="background:#95a5a6"></div>
+                    </div>
+                </div>
+                <div class="creator-section">
+                    <label>Personality</label>
+                    <div class="personality-sliders">
+                        <div class="slider-row">
+                            <span>Lazy</span>
+                            <input type="range" id="trait-conscientious" min="0" max="100" value="50">
+                            <span>Workaholic</span>
+                        </div>
+                        <div class="slider-row">
+                            <span>Shy</span>
+                            <input type="range" id="trait-extraversion" min="0" max="100" value="50">
+                            <span>Outgoing</span>
+                        </div>
+                        <div class="slider-row">
+                            <span>Serious</span>
+                            <input type="range" id="trait-openness" min="0" max="100" value="50">
+                            <span>Creative</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeCharacterCreator()">Cancel</button>
+                <button class="modal-btn confirm" onclick="createNewCharacter()">Hire Employee!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Summary Modal -->
+    <div class="modal-overlay" id="end-of-day-modal" style="display:none;">
+        <div class="modal-content" style="max-width: 580px;">
+            <h2 id="eod-title">Week Complete!</h2>
+            <div class="eod-subtitle" id="eod-subtitle" style="text-align:center;color:#8899aa;margin-bottom:10px;font-size:0.9rem;">You survived another 5 days!</div>
+            <div class="eod-summary">
+                <div class="eod-quote" id="eod-quote">"Life moves pretty fast..."</div>
+                <div class="eod-stats">
+                    <div class="eod-stat-row">
+                        <span class="eod-label">Weekly Slack Points:</span>
+                        <span class="eod-value" id="eod-slack-points">+0</span>
+                    </div>
+                    <div class="eod-stat-row">
+                        <span class="eod-label">Meetings Dodged:</span>
+                        <span class="eod-value" id="eod-meetings-avoided">0</span>
+                    </div>
+                    <div class="eod-stat-row">
+                        <span class="eod-label">Actual Work Done:</span>
+                        <span class="eod-value" id="eod-work-done">0</span>
+                    </div>
+                    <div class="eod-stat-row">
+                        <span class="eod-label">Coffees Consumed:</span>
+                        <span class="eod-value" id="eod-coffee">0</span>
+                    </div>
+                    <div class="eod-stat-row">
+                        <span class="eod-label">Bathroom Retreats:</span>
+                        <span class="eod-value" id="eod-bathroom">0</span>
+                    </div>
+                </div>
+                <div class="eod-rank" id="eod-rank">
+                    <span class="rank-label">Weekly Performance Review:</span>
+                    <span class="rank-value">Perfectly Adequate</span>
+                </div>
+                <div class="eod-coworker-shame" id="eod-coworker-shame" style="display:none;">
+                    <div class="shame-header">Coworkers Who Made You Look Bad This Week:</div>
+                    <div class="shame-list" id="eod-shame-list"></div>
+                </div>
+            </div>
+            <div class="modal-buttons" style="justify-content: center;">
+                <button class="modal-btn confirm" onclick="closeWeeklySummary()">Enjoy The Weekend!</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .eod-summary { padding: 15px 0; }
+        .eod-quote {
+            font-style: italic;
+            color: #ffd700;
+            text-align: center;
+            font-size: 1.1rem;
+            padding: 15px;
+            background: rgba(255,215,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffd700;
+        }
+        .eod-stats {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .eod-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .eod-stat-row:last-child { border-bottom: none; }
+        .eod-label { color: #8899aa; }
+        .eod-value { color: #4ecdc4; font-weight: bold; }
+        .eod-value.negative { color: #e94560; }
+        .eod-value.positive { color: #27ae60; }
+        .eod-rank {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(180deg, #2a3a5a 0%, #1a2a4a 100%);
+            border-radius: 8px;
+            border: 2px solid #4a6a9a;
+        }
+        .rank-label { color: #8899aa; font-size: 0.9rem; }
+        .rank-value {
+            display: block;
+            font-size: 1.3rem;
+            color: #ffd700;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        .eod-coworker-shame {
+            margin-top: 15px;
+            background: rgba(233,69,96,0.1);
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .shame-header {
+            color: #e94560;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .shame-list {
+            font-size: 0.85rem;
+            color: #ff8a9a;
+        }
+        .shame-item {
+            padding: 4px 0;
+        }
+    </style>
+
+    <script>
+    // ==================== DATA STRUCTURES ====================
+
+    /**
+     * PERSONALITY (Big Five Model)
+     * Each trait: 0.0 to 1.0
+     */
+    class Personality {
+        constructor(data = {}) {
+            this.openness = data.openness ?? Math.random();          // Creative, curious vs practical
+            this.conscientiousness = data.conscientiousness ?? Math.random(); // Organized vs careless
+            this.extraversion = data.extraversion ?? Math.random();  // Outgoing vs reserved
+            this.agreeableness = data.agreeableness ?? Math.random(); // Friendly vs challenging
+            this.neuroticism = data.neuroticism ?? Math.random();    // Sensitive vs confident
+        }
+
+        getTraitDescriptions() {
+            const traits = [];
+            if (this.openness > 0.7) traits.push('Creative');
+            else if (this.openness < 0.3) traits.push('Practical');
+            if (this.conscientiousness > 0.7) traits.push('Organized');
+            else if (this.conscientiousness < 0.3) traits.push('Carefree');
+            if (this.extraversion > 0.7) traits.push('Outgoing');
+            else if (this.extraversion < 0.3) traits.push('Introverted');
+            if (this.agreeableness > 0.7) traits.push('Friendly');
+            else if (this.agreeableness < 0.3) traits.push('Competitive');
+            if (this.neuroticism > 0.7) traits.push('Sensitive');
+            else if (this.neuroticism < 0.3) traits.push('Confident');
+            return traits;
+        }
+    }
+
+    /**
+     * NEEDS SYSTEM
+     * Each need: 0 (desperate) to 100 (satisfied)
+     * Decay rates vary by need type
+     */
+    class Needs {
+        constructor() {
+            this.hunger = 80 + Math.random() * 20;
+            this.energy = 70 + Math.random() * 30;
+            this.social = 50 + Math.random() * 30;
+            this.comfort = 60 + Math.random() * 30;
+            this.fun = 40 + Math.random() * 40;
+            this.hygiene = 70 + Math.random() * 30;
+            this.bladder = 60 + Math.random() * 40;
+        }
+
+        // Decay rates per game minute
+        static DECAY_RATES = {
+            hunger: 0.08,
+            energy: 0.05,
+            social: 0.03,
+            comfort: 0.02,
+            fun: 0.06,
+            hygiene: 0.02,
+            bladder: 0.1
+        };
+
+        update(deltaMinutes) {
+            for (const [need, rate] of Object.entries(Needs.DECAY_RATES)) {
+                this[need] = Math.max(0, this[need] - rate * deltaMinutes);
+            }
+        }
+
+        modify(need, amount) {
+            this[need] = Math.max(0, Math.min(100, this[need] + amount));
+        }
+
+        getLowestNeed() {
+            let lowest = { name: null, value: 100 };
+            for (const need of Object.keys(Needs.DECAY_RATES)) {
+                if (this[need] < lowest.value) {
+                    lowest = { name: need, value: this[need] };
+                }
+            }
+            return lowest;
+        }
+
+        getOverallMood() {
+            const weights = { hunger: 1.2, energy: 1.1, social: 0.8, comfort: 0.7, fun: 1.0, hygiene: 0.6, bladder: 0.9 };
+            let total = 0, weightSum = 0;
+            for (const [need, weight] of Object.entries(weights)) {
+                total += this[need] * weight;
+                weightSum += weight * 100;
+            }
+            return (total / weightSum) * 100;
+        }
+    }
+
+    /**
+     * EMOTIONAL STATE
+     * Emotions influence behavior and expressions
+     */
+    class EmotionalState {
+        constructor() {
+            this.happiness = 50;
+            this.anger = 0;
+            this.sadness = 0;
+            this.anxiety = 20;
+            this.boredom = 30;
+            this.excitement = 20;
+        }
+
+        static EMOTIONS = ['happiness', 'anger', 'sadness', 'anxiety', 'boredom', 'excitement'];
+
+        getDominantEmotion() {
+            let dominant = { emotion: 'neutral', intensity: 0 };
+            for (const emotion of EmotionalState.EMOTIONS) {
+                if (this[emotion] > dominant.intensity && this[emotion] > 30) {
+                    dominant = { emotion, intensity: this[emotion] };
+                }
+            }
+            return dominant;
+        }
+
+        getEmoji() {
+            const dom = this.getDominantEmotion();
+            const emojis = {
+                happiness: '😊', anger: '😠', sadness: '😢',
+                anxiety: '😰', boredom: '😑', excitement: '🤩', neutral: '😐'
+            };
+            return emojis[dom.emotion];
+        }
+
+        updateFromNeeds(needs) {
+            // Low needs create negative emotions
+            if (needs.hunger < 30) { this.anger += 0.5; this.happiness -= 0.3; }
+            if (needs.energy < 30) { this.sadness += 0.3; this.happiness -= 0.2; }
+            if (needs.social < 30) { this.sadness += 0.4; this.boredom += 0.3; }
+            if (needs.fun < 30) { this.boredom += 0.5; this.happiness -= 0.3; }
+
+            // High needs create positive emotions
+            if (needs.hunger > 80) this.happiness += 0.2;
+            if (needs.social > 70) { this.happiness += 0.3; this.excitement += 0.2; }
+            if (needs.fun > 70) { this.happiness += 0.4; this.boredom -= 0.5; }
+
+            // Clamp all values
+            for (const emotion of EmotionalState.EMOTIONS) {
+                this[emotion] = Math.max(0, Math.min(100, this[emotion]));
+            }
+
+            // Natural decay toward neutral
+            for (const emotion of EmotionalState.EMOTIONS) {
+                if (emotion === 'happiness') {
+                    this[emotion] += (50 - this[emotion]) * 0.01;
+                } else {
+                    this[emotion] *= 0.99;
+                }
+            }
+        }
+    }
+
+    /**
+     * MEMORY SYSTEM
+     * Stores events and relationship interactions
+     */
+    class Memory {
+        constructor() {
+            this.shortTerm = [];  // Recent events (last hour)
+            this.longTerm = [];   // Important/repeated events
+            this.relationships = new Map(); // CharID -> RelationshipData
+        }
+
+        addEvent(event) {
+            event.timestamp = gameState.time;
+            event.day = gameState.day;
+            this.shortTerm.unshift(event);
+
+            // Keep short-term limited
+            if (this.shortTerm.length > 20) {
+                const old = this.shortTerm.pop();
+                // Transfer significant events to long-term
+                if (Math.abs(old.impact || 0) > 5) {
+                    this.longTerm.unshift(old);
+                    if (this.longTerm.length > 50) this.longTerm.pop();
+                }
+            }
+        }
+
+        getRelationship(charId) {
+            if (!this.relationships.has(charId)) {
+                this.relationships.set(charId, {
+                    friendship: 0,      // -100 to 100
+                    romance: 0,         // 0 to 100
+                    interactionCount: 0,
+                    lastInteraction: null,
+                    history: []
+                });
+            }
+            return this.relationships.get(charId);
+        }
+
+        modifyRelationship(charId, friendshipDelta, romanceDelta = 0) {
+            const rel = this.getRelationship(charId);
+            rel.friendship = Math.max(-100, Math.min(100, rel.friendship + friendshipDelta));
+            rel.romance = Math.max(0, Math.min(100, rel.romance + romanceDelta));
+            rel.interactionCount++;
+            rel.lastInteraction = gameState.time;
+        }
+
+        getRecentMemoriesAbout(charId) {
+            return this.shortTerm.filter(m => m.involvedChar === charId);
+        }
+    }
+
+    /**
+     * CHARACTER CLASS
+     * Complete character with all systems
+     */
+    class Character {
+        constructor(config) {
+            this.id = config.id;
+            this.name = config.name;
+            this.isPlayer = config.isPlayer || false;
+
+            // Appearance
+            this.appearance = {
+                skinTone: config.skinTone || '#f5d0b0',
+                hairColor: config.hairColor || '#2a1a0a',
+                hairStyle: config.hairStyle || 'short',
+                shirtColor: config.shirtColor || '#3498db',
+                pantsColor: config.pantsColor || '#2c3e50',
+                eyeColor: config.eyeColor || '#4a3a2a'
+            };
+
+            // Position & Movement
+            this.x = config.x || 300;
+            this.y = config.y || 300;
+            this.targetX = null;
+            this.targetY = null;
+            this.path = [];
+            this.speed = 60; // pixels per game minute
+            this.state = 'idle'; // idle, walking, sitting, working, talking
+
+            // Core Systems
+            this.personality = new Personality(config.personality);
+            this.needs = new Needs();
+            this.emotions = new EmotionalState();
+            this.memory = new Memory();
+
+            // Action System
+            this.currentAction = null;
+            this.actionQueue = [];
+            this.actionProgress = 0;
+
+            // Animation
+            this.animFrame = 0;
+            this.animTimer = 0;
+            this.facingRight = true;
+            this.expression = 'neutral';
+
+            // Speech
+            this.speechBubble = null;
+            this.speechTimer = 0;
+
+            // Schedule
+            this.schedule = this.generateSchedule();
+
+            // Stats
+            this.role = config.role || 'Employee';
+            this.slackPoints = 0;
+        }
+
+        generateSchedule() {
+            // Daily routine preferences based on personality
+            return {
+                wakeUp: 540 + Math.floor((1 - this.personality.conscientiousness) * 60),
+                workStart: 540,
+                lunchTime: 720 + Math.floor(Math.random() * 60),
+                workEnd: 1020,
+                preferredBreakSpots: this.personality.extraversion > 0.5 ? ['lounge', 'kitchen'] : ['bathroom', 'cubicle']
+            };
+        }
+
+        // ========== UTILITY AI - ACTION SELECTION ==========
+
+        calculateActionUtility(action, context) {
+            let utility = 0;
+            const needs = this.needs;
+            const personality = this.personality;
+            const emotions = this.emotions;
+
+            // Base utility from need fulfillment
+            if (action.needEffects) {
+                for (const [need, effect] of Object.entries(action.needEffects)) {
+                    const currentNeed = needs[need];
+                    const needImportance = (100 - currentNeed) / 100; // Lower need = more important
+                    const effectValue = effect > 0 ? effect * needImportance * 2 : effect * 0.5;
+                    utility += effectValue;
+
+                    // Critical need bonus
+                    if (currentNeed < 20 && effect > 0) {
+                        utility += effect * 3;
+                    }
+                }
+            }
+
+            // Personality modifiers
+            if (action.category === 'work') {
+                utility += (personality.conscientiousness - 0.5) * 20;
+                utility -= (personality.extraversion - 0.5) * 10;
+            }
+            if (action.category === 'social') {
+                utility += (personality.extraversion - 0.5) * 30;
+                utility += (personality.agreeableness - 0.5) * 15;
+            }
+            if (action.category === 'slack') {
+                utility -= (personality.conscientiousness - 0.5) * 25;
+                utility += (personality.openness - 0.5) * 10;
+            }
+
+            // Emotional modifiers
+            if (action.category === 'fun' && emotions.boredom > 50) {
+                utility += emotions.boredom * 0.5;
+            }
+            if (action.category === 'social' && emotions.sadness > 30) {
+                utility += 15; // Seek social support when sad
+            }
+
+            // Context modifiers
+            if (context.nearbyChars && action.requiresOther) {
+                utility += context.nearbyChars.length * 5;
+            }
+            if (!context.nearbyChars?.length && action.requiresOther) {
+                utility -= 50; // Can't do social actions alone
+            }
+
+            // Memory influence - avoid recently done actions
+            const recentSameAction = this.memory.shortTerm.find(
+                m => m.action === action.id && (gameState.time - m.timestamp) < 30
+            );
+            if (recentSameAction) {
+                utility -= 20;
+            }
+
+            // Relationship influence for social actions
+            if (action.category === 'social' && context.targetChar) {
+                const rel = this.memory.getRelationship(context.targetChar.id);
+                utility += rel.friendship * 0.3;
+            }
+
+            return Math.max(0, utility);
+        }
+
+        selectBestAction(availableActions, context) {
+            let bestAction = null;
+            let bestUtility = -Infinity;
+
+            // NPCs have a chance to pick "makes you look bad" actions
+            if (!this.isPlayer && Math.random() < 0.25) {
+                const shameActions = availableActions.filter(a => a.makesYouLookBad);
+                if (shameActions.length > 0) {
+                    const action = shameActions[Math.floor(Math.random() * shameActions.length)];
+                    return { ...action, utility: 50 };
+                }
+            }
+
+            for (const action of availableActions) {
+                const utility = this.calculateActionUtility(action, context);
+                if (utility > bestUtility) {
+                    bestUtility = utility;
+                    bestAction = { ...action, utility };
+                }
+            }
+
+            return bestAction;
+        }
+
+        // ========== ACTION EXECUTION ==========
+
+        startAction(action) {
+            this.currentAction = action;
+            this.actionProgress = 0;
+            this.state = action.state || 'working';
+
+            // Log to memory
+            this.memory.addEvent({
+                type: 'action_start',
+                action: action.id,
+                location: this.getCurrentArea()?.id,
+                impact: 0
+            });
+
+            // Speech bubble for some actions
+            if (action.speech && Math.random() < 0.5) {
+                this.say(action.speech[Math.floor(Math.random() * action.speech.length)]);
+            }
+        }
+
+        updateAction(deltaMinutes) {
+            if (!this.currentAction) return;
+
+            this.actionProgress += deltaMinutes;
+
+            // Apply continuous effects
+            if (this.currentAction.continuousEffects) {
+                for (const [need, rate] of Object.entries(this.currentAction.continuousEffects)) {
+                    this.needs.modify(need, rate * deltaMinutes);
+                }
+            }
+
+            // Check completion
+            if (this.actionProgress >= this.currentAction.duration) {
+                this.completeAction();
+            }
+        }
+
+        completeAction() {
+            const action = this.currentAction;
+            if (!action) return;
+
+            // Apply final effects
+            if (action.needEffects) {
+                for (const [need, effect] of Object.entries(action.needEffects)) {
+                    this.needs.modify(need, effect);
+                }
+            }
+
+            // Emotional effects
+            if (action.emotionEffects) {
+                for (const [emotion, effect] of Object.entries(action.emotionEffects)) {
+                    this.emotions[emotion] = Math.max(0, Math.min(100, this.emotions[emotion] + effect));
+                }
+            }
+
+            // Slack points for player
+            if (this.isPlayer && action.slackPoints) {
+                this.slackPoints += action.slackPoints;
+                // Track weekly stats
+                weeklyStats.slackPoints += action.slackPoints;
+                if (action.category === 'work') {
+                    weeklyStats.workDone++;
+                }
+                if (action.requiresArea === 'meeting' && action.category === 'slack') {
+                    weeklyStats.meetingsAvoided++;
+                }
+                // Track coffee and bathroom
+                if (action.id === 'coffee') {
+                    weeklyStats.coffeeDrunk++;
+                }
+                if (action.requiresArea === 'bathroom') {
+                    weeklyStats.bathroomTrips++;
+                }
+            }
+
+            // Coworker work makes player look bad
+            if (!this.isPlayer && action.makesYouLookBad) {
+                weeklyStats.coworkerShame.push(`${this.name} ${action.speech ? action.speech[0] : 'worked harder than you'}`);
+                weeklyStats.slackPoints -= 5; // Penalty for being shown up
+            }
+
+            // Memory
+            this.memory.addEvent({
+                type: 'action_complete',
+                action: action.id,
+                impact: action.slackPoints || 0
+            });
+
+            // State
+            this.state = 'idle';
+            this.currentAction = null;
+            this.actionProgress = 0;
+
+            // Next queued action
+            if (this.actionQueue.length > 0) {
+                const next = this.actionQueue.shift();
+                this.startAction(next);
+            }
+        }
+
+        // ========== MOVEMENT & PATHFINDING ==========
+
+        moveTo(targetX, targetY) {
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.state = 'walking';
+            // Simple direct path for now
+            this.path = [{ x: targetX, y: targetY }];
+        }
+
+        updateMovement(deltaMinutes) {
+            if (this.targetX === null || this.targetY === null) return;
+
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 5) {
+                this.x = this.targetX;
+                this.y = this.targetY;
+                this.targetX = null;
+                this.targetY = null;
+                this.state = 'idle';
+                this.path = [];
+            } else {
+                const moveSpeed = this.speed * deltaMinutes;
+                this.x += (dx / dist) * Math.min(moveSpeed, dist);
+                this.y += (dy / dist) * Math.min(moveSpeed, dist);
+                this.facingRight = dx > 0;
+                this.state = 'walking';
+            }
+        }
+
+        getCurrentArea() {
+            for (const area of OFFICE_AREAS) {
+                if (this.x >= area.x && this.x <= area.x + area.w &&
+                    this.y >= area.y && this.y <= area.y + area.h) {
+                    return area;
+                }
+            }
+            return null;
+        }
+
+        // ========== SPEECH & ANIMATION ==========
+
+        say(text, duration = 3000) {
+            this.speechBubble = text;
+            this.speechTimer = duration;
+        }
+
+        updateAnimation(deltaMs) {
+            this.animTimer += deltaMs;
+            if (this.animTimer > 200) {
+                this.animTimer = 0;
+                this.animFrame = (this.animFrame + 1) % 4;
+            }
+
+            if (this.speechTimer > 0) {
+                this.speechTimer -= deltaMs;
+                if (this.speechTimer <= 0) {
+                    this.speechBubble = null;
+                }
+            }
+
+            // Update expression based on emotions
+            const dom = this.emotions.getDominantEmotion();
+            this.expression = dom.emotion;
+        }
+
+        // ========== MAIN UPDATE ==========
+
+        update(deltaMinutes, deltaMs, context) {
+            // Update needs
+            this.needs.update(deltaMinutes);
+
+            // Update emotions based on needs
+            this.emotions.updateFromNeeds(this.needs);
+
+            // Movement
+            this.updateMovement(deltaMinutes);
+
+            // Current action
+            if (this.currentAction) {
+                this.updateAction(deltaMinutes);
+            }
+
+            // Animation
+            this.updateAnimation(deltaMs);
+
+            // AI decision making (for NPCs or idle player)
+            if (!this.currentAction && this.state === 'idle' && !this.isPlayer) {
+                this.makeDecision(context);
+            }
+        }
+
+        makeDecision(context) {
+            const area = this.getCurrentArea();
+            const availableActions = area ? getActionsForArea(area.type) : ACTIONS.filter(a => !a.requiresArea);
+
+            // Add context
+            const nearbyChars = context.characters.filter(c =>
+                c.id !== this.id &&
+                Math.sqrt((c.x - this.x) ** 2 + (c.y - this.y) ** 2) < 100
+            );
+
+            const actionContext = {
+                area,
+                nearbyChars,
+                targetChar: nearbyChars[0],
+                timeOfDay: gameState.time
+            };
+
+            // Consider moving to a better location
+            if (Math.random() < 0.3) {
+                const bestArea = this.chooseBestArea();
+                if (bestArea && bestArea.id !== area?.id) {
+                    this.moveTo(
+                        bestArea.x + 20 + Math.random() * (bestArea.w - 40),
+                        bestArea.y + 20 + Math.random() * (bestArea.h - 40)
+                    );
+                    return;
+                }
+            }
+
+            const bestAction = this.selectBestAction(availableActions, actionContext);
+            if (bestAction && bestAction.utility > 10) {
+                this.startAction(bestAction);
+            }
+        }
+
+        chooseBestArea() {
+            let bestArea = null;
+            let bestScore = -Infinity;
+
+            for (const area of OFFICE_AREAS.filter(a => a.type !== 'wall' && a.type !== 'hallway')) {
+                let score = 0;
+                const areaActions = getActionsForArea(area.type);
+
+                for (const action of areaActions) {
+                    score += this.calculateActionUtility(action, {}) * 0.5;
+                }
+
+                // Personality preferences
+                if (area.type === 'lounge' && this.personality.extraversion > 0.6) score += 20;
+                if (area.type === 'cubicle' && this.personality.conscientiousness > 0.6) score += 15;
+                if (area.type === 'kitchen' && this.needs.hunger < 50) score += 30;
+                if (area.type === 'bathroom' && this.needs.bladder < 40) score += 50;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestArea = area;
+                }
+            }
+
+            return bestArea;
+        }
+    }
+
+    // ==================== ACTIONS DATABASE ====================
+
+    const ACTIONS = [
+        // ========== SOUL-CRUSHING "WORK" (Lose promotion points!) ==========
+        {
+            id: 'work_hard',
+            name: 'Actually Do Work (Rookie Mistake)',
+            category: 'work',
+            duration: 60,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -25, fun: -20, comfort: -10 },
+            emotionEffects: { boredom: 25, sadness: 10 },
+            slackPoints: -15,
+            state: 'working',
+            speech: ['Why am I doing this?', '*soul leaving body*', 'This is fine...', 'I went to college for this?', 'Mom said I could be anything... I chose suffering', '*corporate Stockholm syndrome intensifies*', 'Is this what peak performance looks like?', 'My therapist will hear about this']
+        },
+        {
+            id: 'synergize_paradigm',
+            name: 'Synergize Paradigms',
+            category: 'work',
+            duration: 45,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -20, fun: -15 },
+            emotionEffects: { boredom: 30, anxiety: 10 },
+            slackPoints: -10,
+            state: 'working',
+            speech: ['Leveraging core competencies...', 'Moving the needle...', 'Circling back...', 'Per my last email...', 'Lets unpack that...', 'I dont have the bandwidth...', 'Lets put a pin in it...', 'SYNERGY SYNERGY SYNERGY', 'Im just gonna piggyback off that']
+        },
+        {
+            id: 'tps_reports',
+            name: 'TPS Reports',
+            category: 'work',
+            duration: 50,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -18, fun: -25, comfort: -5 },
+            emotionEffects: { boredom: 40, sadness: 15 },
+            slackPoints: -12,
+            state: 'working',
+            speech: ['Did you get the memo?', 'I have 8 bosses...', 'New cover sheet needed...', 'Yeahhh...']
+        },
+        {
+            id: 'reply_all',
+            name: 'Reply All Disaster',
+            category: 'work',
+            duration: 30,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -10, social: -15 },
+            emotionEffects: { anxiety: 40 },
+            slackPoints: -8,
+            state: 'working',
+            speech: ['Oh no OH NO', 'UNSEND UNSEND', '*existential dread*', 'Maybe nobody saw it...', 'CTRL+Z CTRL+Z CTRL+Z', 'My resignation letter is ready...', '*prays to the email gods*', 'Witness protection program here I come']
+        },
+
+        // ========== THE ART OF LOOKING BUSY (Promotion points!) ==========
+        {
+            id: 'pretend_work',
+            name: 'Strategic Keyboard Mashing',
+            category: 'slack',
+            duration: 30,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -3, fun: 10 },
+            emotionEffects: { boredom: -10, happiness: 5 },
+            slackPoints: 10,
+            state: 'working',
+            speech: ['*aggressive typing sounds*', '*stares at spreadsheet*', 'Hmm, very interesting...', 'Almost done!']
+        },
+        {
+            id: 'browse_reddit',
+            name: 'Research (Reddit)',
+            category: 'slack',
+            duration: 45,
+            requiresArea: 'cubicle',
+            needEffects: { fun: 25, energy: -5 },
+            emotionEffects: { boredom: -25, happiness: 15 },
+            slackPoints: 12,
+            state: 'sitting',
+            speech: ['Market research...', '*alt+tabs furiously*', 'This is work-related I swear', 'The CEO does this, probably', 'Industry benchmarking!', 'Am I getting paid for this? *checks* Nice.', 'My boss is on Reddit too, this is networking']
+        },
+        {
+            id: 'online_shopping',
+            name: 'Competitive Analysis',
+            category: 'slack',
+            duration: 40,
+            requiresArea: 'cubicle',
+            needEffects: { fun: 20, energy: -3 },
+            emotionEffects: { happiness: 20, boredom: -20 },
+            slackPoints: 10,
+            state: 'sitting',
+            speech: ['Analyzing competitor pricing...', '*adds to cart*', 'Free shipping!', 'Its research!']
+        },
+        {
+            id: 'desk_nap',
+            name: 'Executive Rest Period',
+            category: 'slack',
+            duration: 25,
+            requiresArea: 'cubicle',
+            needEffects: { energy: 25, comfort: 15 },
+            emotionEffects: { boredom: -5, happiness: 10 },
+            slackPoints: 15,
+            state: 'sitting',
+            speech: ['*eyes closed, hand on mouse*', 'Deep thinking...', 'Ideating...', 'Zzz...', 'Meditating on Q3 targets...', 'Visualizing success...', '*drools on keyboard*', 'CEOs take power naps, Im basically a CEO']
+        },
+        {
+            id: 'fake_phone_call',
+            name: 'Important Client Call',
+            category: 'slack',
+            duration: 30,
+            requiresArea: 'cubicle',
+            needEffects: { fun: 15, energy: -5 },
+            emotionEffects: { boredom: -15, excitement: 10 },
+            slackPoints: 12,
+            state: 'talking',
+            speech: ['Uh huh... uh huh...', 'Absolutely, Mr. Definitely-Real...', '*nods at nothing*', 'Very important call.', 'Yes, I can hold for infinity...', '*talking to dial tone*', 'The CEO of Important Things sends his regards', 'Sorry, Fortune 500 company on line 2']
+        },
+        {
+            id: 'reorganize_desk',
+            name: 'Feng Shui Optimization',
+            category: 'slack',
+            duration: 35,
+            requiresArea: 'cubicle',
+            needEffects: { fun: 10, comfort: 15 },
+            emotionEffects: { boredom: -10, anxiety: -5 },
+            slackPoints: 8,
+            state: 'standing',
+            speech: ['*moves stapler 2 inches*', 'Much better!', 'Productivity optimization!', '*adjusts monitor*']
+        },
+
+        // ========== MEETINGS (The Great Time Void) ==========
+        {
+            id: 'meeting',
+            name: 'Meeting About Meetings',
+            category: 'work',
+            duration: 90,
+            requiresArea: 'meeting',
+            needEffects: { energy: -30, fun: -25, comfort: -15 },
+            emotionEffects: { boredom: 50, sadness: 10 },
+            slackPoints: -5,
+            state: 'sitting',
+            speech: ['Lets table that...', 'Circle back offline...', '*dies inside*', 'Great meeting everyone!', 'This could have been an email...', 'Im muted right? IM MUTED RIGHT?!', '*contemplates existence*', 'Has anyone actually achieved synergy?', 'Who scheduled this during lunch??']
+        },
+        {
+            id: 'hide_meeting',
+            name: 'Strategic Disengagement',
+            category: 'slack',
+            duration: 40,
+            requiresArea: 'meeting',
+            needEffects: { energy: 10, comfort: 15, fun: 5 },
+            emotionEffects: { anxiety: -15, boredom: -10 },
+            slackPoints: 15,
+            state: 'sitting',
+            speech: ['*counts ceiling tiles*', '*draws elaborate doodles*', '*plans weekend*', '*nods occasionally*', 'I have achieved enlightenment...', '*mentally designing my startup*', 'Wonder if Im on camera...', '*invents cure for cancer in head*', 'If I dont move, Im invisible']
+        },
+        {
+            id: 'buzzword_bingo',
+            name: 'Buzzword Bingo',
+            category: 'slack',
+            duration: 45,
+            requiresArea: 'meeting',
+            needEffects: { fun: 30, social: 10 },
+            emotionEffects: { happiness: 25, boredom: -30 },
+            slackPoints: 18,
+            state: 'sitting',
+            speech: ['SYNERGY! Thats a bingo!', 'Leverage... check!', 'Pivot! Almost there!', 'DISRUPTION! BINGO!']
+        },
+        {
+            id: 'schedule_meeting',
+            name: 'Schedule Future Meeting',
+            category: 'slack',
+            duration: 20,
+            requiresArea: 'meeting',
+            needEffects: { fun: 5 },
+            emotionEffects: { boredom: -5 },
+            slackPoints: 8,
+            state: 'sitting',
+            speech: ['Lets sync calendars...', 'How about never?', 'I have a hard stop...', 'Let me check my calendar...']
+        },
+        {
+            id: 'give_presentation',
+            name: 'Present Empty Slides',
+            category: 'work',
+            duration: 40,
+            requiresArea: 'meeting',
+            needEffects: { energy: -20, social: 10, fun: -15 },
+            emotionEffects: { anxiety: 35 },
+            slackPoints: -10,
+            state: 'standing',
+            speech: ['As this graph shows...', 'Moving forward...', 'To be determined...', '*reads slide word for word*']
+        },
+
+        // ========== ELITE SLACKING (Maximum Promotion Points!) ==========
+        {
+            id: 'prank_coworker',
+            name: 'Team Building Exercise',
+            category: 'fun',
+            duration: 35,
+            requiresArea: 'cubicle',
+            requiresOther: true,
+            needEffects: { fun: 45, social: 20, energy: -10 },
+            emotionEffects: { happiness: 35, excitement: 30, boredom: -30 },
+            slackPoints: 20,
+            state: 'standing',
+            speech: ['*puts stapler in jello*', 'Identity theft is not a joke!', '*replaces family photos*', 'MICHAEL!']
+        },
+        {
+            id: 'stare_at_camera',
+            name: 'Break Fourth Wall',
+            category: 'slack',
+            duration: 5,
+            needEffects: { fun: 15 },
+            emotionEffects: { happiness: 10 },
+            slackPoints: 5,
+            state: 'idle',
+            speech: ['*Jim face*', '*knowing look*', 'Are you seeing this?', 'Life moves pretty fast...']
+        },
+        {
+            id: 'office_olympics',
+            name: 'Office Olympics',
+            category: 'fun',
+            duration: 50,
+            requiresArea: 'lounge',
+            needEffects: { fun: 60, social: 35, energy: -15 },
+            emotionEffects: { happiness: 45, excitement: 50, boredom: -50 },
+            slackPoints: 25,
+            state: 'standing',
+            speech: ['FLONKERTON CHAMPION!', '*chair racing*', 'Yogurt lid medals!', 'This is professional development!']
+        },
+        {
+            id: 'disappear_completely',
+            name: 'Strategic Vanishing',
+            category: 'slack',
+            duration: 60,
+            needEffects: { energy: 30, comfort: 25, fun: 20 },
+            emotionEffects: { anxiety: -30, happiness: 20 },
+            slackPoints: 25,
+            state: 'walking',
+            speech: ['*poof*', 'If they cant find me...', 'Ghost protocol activated', 'Working remotely (in the parking lot)', 'Schrodingers employee - I both exist and dont', 'Gone to milk carton status', 'Entering the Void...', '*becomes office cryptid*', 'Legend says I still work here']
+        },
+
+        // ========== KITCHEN ADVENTURES ==========
+        {
+            id: 'coffee',
+            name: '47th Coffee Today',
+            category: 'need',
+            duration: 20,
+            requiresArea: 'kitchen',
+            needEffects: { energy: 30, bladder: -20 },
+            emotionEffects: { happiness: 10, anxiety: 5 },
+            slackPoints: 5,
+            state: 'standing',
+            speech: ['*hands shaking*', 'I can quit anytime...', 'This is fine.', 'PRODUCTIVITY!', 'My blood type is now espresso', 'I see through time...', 'Sleep is for the weak', '*vibrating at molecular level*', 'Heart palpitations = passion']
+        },
+        {
+            id: 'microwave_fish',
+            name: 'Microwave Fish (War Crime)',
+            category: 'chaos',
+            duration: 15,
+            requiresArea: 'kitchen',
+            needEffects: { hunger: 35, social: -30 },
+            emotionEffects: { happiness: 15 },
+            slackPoints: 10,
+            state: 'standing',
+            speech: ['*presses 5 minutes*', 'What? Its healthy!', '*entire floor evacuates*', 'More for me!', 'Omega-3 chaos activated', '*fire alarm triggers*', 'Asserting dominance...', 'Geneva Convention? Never heard of it', 'Some people just want to watch the world burn']
+        },
+        {
+            id: 'steal_lunch',
+            name: 'Acquire Unlabeled Food',
+            category: 'slack',
+            duration: 10,
+            requiresArea: 'kitchen',
+            needEffects: { hunger: 30, fun: 15 },
+            emotionEffects: { excitement: 15, anxiety: 10 },
+            slackPoints: 12,
+            state: 'standing',
+            speech: ['Finders keepers...', 'No name, fair game!', '*checks for witnesses*', 'Corporate foraging!']
+        },
+        {
+            id: 'gossip',
+            name: 'Intel Gathering',
+            category: 'social',
+            duration: 35,
+            requiresArea: 'kitchen',
+            needEffects: { social: 35, fun: 20 },
+            emotionEffects: { excitement: 25, happiness: 15 },
+            slackPoints: 15,
+            state: 'talking',
+            speech: ['Did you HEAR?!', 'Dont tell anyone but...', '*whispers intensely*', 'I heard from HR...']
+        },
+
+        // ========== BATHROOM (The Sacred Refuge) ==========
+        {
+            id: 'bathroom',
+            name: 'Quick Break',
+            category: 'need',
+            duration: 10,
+            requiresArea: 'bathroom',
+            needEffects: { bladder: 80, comfort: 10 },
+            slackPoints: 2,
+            state: 'standing'
+        },
+        {
+            id: 'bathroom_break_extended',
+            name: 'Executive Retreat',
+            category: 'slack',
+            duration: 45,
+            requiresArea: 'bathroom',
+            needEffects: { bladder: 80, comfort: 30, fun: 25 },
+            emotionEffects: { anxiety: -20, happiness: 15 },
+            slackPoints: 20,
+            state: 'standing',
+            speech: ['*scrolling TikTok*', 'Five more minutes...', 'This is self-care.', '*legs going numb*', 'Time works differently here', 'Is that my boss knocking?!', 'Ive been here 47 minutes...', 'My legs stopped existing', 'Promoted to Bathroom CEO']
+        },
+        {
+            id: 'bathroom_cry',
+            name: 'Emotional Processing',
+            category: 'emotional',
+            duration: 20,
+            requiresArea: 'bathroom',
+            needEffects: { comfort: 30 },
+            emotionEffects: { sadness: -35, anxiety: -25 },
+            slackPoints: 10,
+            state: 'standing',
+            speech: ['*ugly crying*', 'Why did I major in this?', '*deep breaths*', 'I should start a podcast...', 'My parents think Im a lawyer...', '*existential screaming (quietly)*', 'Is this my villain origin story?', 'LinkedIn said I was a go-getter...', 'At least the toilet gets me']
+        },
+
+        // ========== LOUNGE (Paradise Found) ==========
+        {
+            id: 'nap',
+            name: 'Power Ideation Session',
+            category: 'slack',
+            duration: 50,
+            requiresArea: 'lounge',
+            needEffects: { energy: 50, comfort: 30 },
+            emotionEffects: { happiness: 20, anxiety: -25 },
+            slackPoints: 20,
+            state: 'sitting',
+            speech: ['*snoring*', 'Brainstorming...', 'Processing synergies...', 'ZzZzZz...']
+        },
+        {
+            id: 'games',
+            name: 'Strategy Training',
+            category: 'fun',
+            duration: 45,
+            requiresArea: 'lounge',
+            needEffects: { fun: 45, energy: -10, social: 20 },
+            emotionEffects: { happiness: 35, boredom: -40, excitement: 30 },
+            slackPoints: 18,
+            state: 'standing',
+            speech: ['GET REKT!', 'Best of 7?', 'This builds teamwork!', 'WINNER STAYS!']
+        },
+        {
+            id: 'bean_bag_therapy',
+            name: 'Bean Bag Therapy',
+            category: 'slack',
+            duration: 40,
+            requiresArea: 'lounge',
+            needEffects: { comfort: 40, energy: 15, fun: 20 },
+            emotionEffects: { happiness: 25, anxiety: -20 },
+            slackPoints: 15,
+            state: 'sitting',
+            speech: ['*sinks into void*', 'I live here now.', 'Ergonomic excellence!', '*becomes one with bean bag*', 'This is my final form', 'Tell my family I found peace', 'Return to womb energy', 'The bean bag understands me']
+        },
+
+        // ========== SUPPLY CLOSET (Secret HQ) ==========
+        {
+            id: 'supply_closet_hide',
+            name: 'Emergency Bunker',
+            category: 'slack',
+            duration: 30,
+            requiresArea: 'supply',
+            needEffects: { comfort: 20, energy: 15 },
+            emotionEffects: { anxiety: -30 },
+            slackPoints: 18,
+            state: 'standing',
+            speech: ['*hiding achieved*', 'They will never find me...', 'This is my Fortress of Solitude', '*phones boss* Im in a meeting', 'Witness protection program', 'I have become one with the Post-its', '*builds blanket fort*', 'Narnia? More like Car-nia', 'Office Gollum mode engaged']
+        },
+
+        // ========== BOSS ADJACENT (Dangerous Territory) ==========
+        {
+            id: 'visit_manager',
+            name: 'Face Time (Not the App)',
+            category: 'social',
+            duration: 35,
+            requiresArea: 'manager',
+            needEffects: { social: 15, energy: -10, comfort: -10 },
+            emotionEffects: { anxiety: 20 },
+            slackPoints: 8,
+            state: 'standing',
+            speech: ['Great weather!', '*laughs at bad joke*', 'Brilliant idea, boss!', 'Yes, synergy!']
+        },
+        {
+            id: 'take_credit',
+            name: 'Visibility Enhancement',
+            category: 'slack',
+            duration: 25,
+            requiresArea: 'manager',
+            needEffects: { social: -10, fun: 15 },
+            emotionEffects: { excitement: 20, anxiety: 10 },
+            slackPoints: 20,
+            state: 'talking',
+            speech: ['As I was saying...', 'My idea actually...', 'I spearheaded that!', '*steals credit smoothly*', 'Great minds think alike (my mind first)', 'I basically invented this concept', 'We did it! (Royal we = me)', 'Teamwork makes MY dream work']
+        },
+
+        // ========== RECEPTION (Social Hub) ==========
+        {
+            id: 'candy_jar',
+            name: 'Networking Fuel',
+            category: 'need',
+            duration: 8,
+            requiresArea: 'reception',
+            needEffects: { hunger: 15, fun: 10, energy: 15 },
+            emotionEffects: { happiness: 10 },
+            slackPoints: 5,
+            state: 'standing',
+            speech: ['Just one... or twelve', '*fistful of candy*', 'For later!', 'These are for clients right?', '*empties entire jar into pockets*', 'Sugar is a business expense', 'Stress eating is a coping mechanism', 'Calories dont count if youre standing']
+        },
+        {
+            id: 'flirt_reception',
+            name: 'Strategic Rapport Building',
+            category: 'social',
+            duration: 30,
+            requiresArea: 'reception',
+            needEffects: { social: 30, fun: 20 },
+            emotionEffects: { happiness: 20, excitement: 15 },
+            slackPoints: 12,
+            state: 'talking',
+            speech: ['Hey...', 'Come here often?', '*leans awkwardly*', 'Nice... stapler.', 'Is that a new lanyard?', 'Your TPS reports are *chefs kiss*', 'Did it hurt? When you fell from the org chart?', 'Youre like a bonus, but for my eyes']
+        },
+
+        // ========== UNIVERSAL ELITE MOVES ==========
+        {
+            id: 'phone_scroll',
+            name: 'Market Monitoring',
+            category: 'slack',
+            duration: 20,
+            needEffects: { fun: 20, energy: -3 },
+            emotionEffects: { boredom: -20, happiness: 10 },
+            slackPoints: 8,
+            state: 'standing',
+            speech: ['*doom scrolling*', 'Checking... stocks...', '*likes everything*', 'Industry research!']
+        },
+        {
+            id: 'long_walk',
+            name: 'Walking Meeting (Solo)',
+            category: 'slack',
+            duration: 30,
+            needEffects: { energy: -5, comfort: 15, fun: 15 },
+            emotionEffects: { boredom: -15, anxiety: -15 },
+            slackPoints: 12,
+            state: 'walking',
+            speech: ['*walks purposefully*', 'Very important errand...', 'Looking for printer...', 'Exercise is productive!', 'If you walk fast enough, youre unavailable', 'Speed = importance', 'Too busy, cant stop, big meeting', '*laps the building 4 times*']
+        },
+        {
+            id: 'pretend_busy',
+            name: 'Urgent Document Delivery',
+            category: 'slack',
+            duration: 15,
+            needEffects: { fun: 10 },
+            emotionEffects: { anxiety: -10 },
+            slackPoints: 8,
+            state: 'walking',
+            speech: ['*carrying blank papers*', 'VERY URGENT!', 'Cant stop!', '*walks at CEO speed*']
+        },
+        {
+            id: 'leave_early',
+            name: 'Doctors Appointment',
+            category: 'slack',
+            duration: 5,
+            needEffects: { fun: 30, energy: 10 },
+            emotionEffects: { happiness: 40, excitement: 30 },
+            slackPoints: 25,
+            state: 'walking',
+            speech: ['*grabs bag at 4:59*', 'Family emergency!', 'Traffic you know...', 'See you Monday... I mean tomorrow!', 'My goldfish is sick...', 'Dentist/Doctor/Shaman appointment', 'Irish goodbye activated', '*ninja smoke bomb*', 'I have to return some videotapes']
+        },
+
+        // ========== COWORKER ACTUAL WORK (Makes YOU Look Bad!) ==========
+        {
+            id: 'coworker_overtime',
+            name: 'Coworker: Staying Late',
+            category: 'coworker_work',
+            duration: 60,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -40, fun: -30 },
+            emotionEffects: { sadness: 25, anxiety: 30 },
+            slackPoints: -25,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'working',
+            speech: ['Just need to finish this...', '*emails at 11pm*', 'Almost done!', '*CC\'s the whole company*']
+        },
+        {
+            id: 'coworker_volunteers',
+            name: 'Coworker: Volunteers First',
+            category: 'coworker_work',
+            duration: 30,
+            requiresArea: 'meeting',
+            needEffects: { energy: -20, social: 20 },
+            emotionEffects: { anxiety: 20 },
+            slackPoints: -15,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'standing',
+            speech: ['I\'ll take that on!', 'Happy to help!', 'No problem!', '*hand shoots up*']
+        },
+        {
+            id: 'coworker_sucks_up',
+            name: 'Coworker: Brown Nosing',
+            category: 'coworker_work',
+            duration: 25,
+            requiresArea: 'manager',
+            needEffects: { social: 30, energy: -10 },
+            emotionEffects: { anxiety: 15 },
+            slackPoints: -20,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'talking',
+            speech: ['Great tie today, boss!', 'You\'re so right!', '*laughs at terrible joke*', 'What a visionary!']
+        },
+        {
+            id: 'coworker_early_arrival',
+            name: 'Coworker: Here at 6AM',
+            category: 'coworker_work',
+            duration: 40,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -30, comfort: -20 },
+            emotionEffects: { sadness: 20 },
+            slackPoints: -22,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'working',
+            speech: ['Beat the traffic!', '*sends 5am emails*', 'Early bird!', '*judges everyone arriving at 9*']
+        },
+        {
+            id: 'coworker_weekend_email',
+            name: 'Coworker: Sunday Emails',
+            category: 'coworker_work',
+            duration: 20,
+            requiresArea: 'cubicle',
+            needEffects: { fun: -25 },
+            emotionEffects: { anxiety: 35 },
+            slackPoints: -18,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'sitting',
+            speech: ['Just wanted to get ahead...', '*sent at 2am Sunday*', 'Hope this helps!', '*expects reply Monday*']
+        },
+        {
+            id: 'coworker_presentation_prep',
+            name: 'Coworker: Over-Prepared',
+            category: 'coworker_work',
+            duration: 45,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -35, fun: -20 },
+            emotionEffects: { anxiety: 25 },
+            slackPoints: -20,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'working',
+            speech: ['72 slide deck ready!', 'Added more graphs!', 'Font choice matters!', '*practices in mirror*']
+        },
+        {
+            id: 'coworker_no_lunch',
+            name: 'Coworker: Works Through Lunch',
+            category: 'coworker_work',
+            duration: 35,
+            requiresArea: 'cubicle',
+            needEffects: { hunger: -40, energy: -25 },
+            emotionEffects: { sadness: 15 },
+            slackPoints: -16,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'working',
+            speech: ['I\'ll eat at my desk...', '*sad desk salad*', 'Too busy!', '*judges lunch takers*']
+        },
+        {
+            id: 'coworker_extra_credit',
+            name: 'Coworker: Takes On Extra Work',
+            category: 'coworker_work',
+            duration: 50,
+            requiresArea: 'cubicle',
+            needEffects: { energy: -30, fun: -25, comfort: -15 },
+            emotionEffects: { anxiety: 30, sadness: 10 },
+            slackPoints: -24,
+            isCoworkerAction: true,
+            makesYouLookBad: true,
+            state: 'working',
+            speech: ['I can handle more!', 'Actually, give me that too!', 'I have bandwidth!', '*drowning but smiling*']
+        }
+    ];
+
+    function getActionsForArea(areaType) {
+        // Map similar area types
+        const areaMap = {
+            'manager': ['manager'],
+            'reception': ['reception'],
+            'annex': ['annex', 'cubicle'],
+            'supply': ['supply'],
+            'warehouse': ['warehouse'],
+            'meeting': ['meeting'],
+            'cubicle': ['cubicle'],
+            'kitchen': ['kitchen'],
+            'bathroom': ['bathroom'],
+            'lounge': ['lounge'],
+            'hallway': []
+        };
+        const validAreas = areaMap[areaType] || [areaType];
+        return ACTIONS.filter(a => !a.requiresArea || validAreas.includes(a.requiresArea));
+    }
+
+    // ==================== FUN MODERN OFFICE LAYOUT ====================
+
+    const OFFICE_AREAS = [
+        // Open Workspace Pods (vibrant colors)
+        { id: 'cubicle1', type: 'cubicle', name: 'Green Pod', x: 30, y: 220, w: 95, h: 85, color: '#2d5a4a', highlight: '#3d7a6a', interactive: true },
+        { id: 'cubicle2', type: 'cubicle', name: 'Blue Pod', x: 135, y: 220, w: 95, h: 85, color: '#2a4a6a', highlight: '#3a6a9a', interactive: true },
+        { id: 'cubicle3', type: 'cubicle', name: 'Orange Pod', x: 240, y: 220, w: 95, h: 85, color: '#6a4a2a', highlight: '#9a6a3a', interactive: true },
+        { id: 'cubicle4', type: 'cubicle', name: 'Purple Pod', x: 30, y: 315, w: 95, h: 85, color: '#4a3a5a', highlight: '#6a5a8a', interactive: true },
+        { id: 'cubicle5', type: 'cubicle', name: 'Teal Pod', x: 135, y: 315, w: 95, h: 85, color: '#2a5a5a', highlight: '#3a8a8a', interactive: true },
+        { id: 'cubicle6', type: 'cubicle', name: 'Red Pod', x: 240, y: 315, w: 95, h: 85, color: '#5a2a3a', highlight: '#8a4a5a', interactive: true },
+
+        // Creative Meeting Spaces
+        { id: 'conference', type: 'meeting', name: 'Brainstorm Room', x: 30, y: 30, w: 120, h: 85, color: '#e07030', highlight: '#ff9050', interactive: true },
+        { id: 'meeting_small', type: 'meeting', name: 'Think Tank', x: 160, y: 30, w: 90, h: 85, color: '#30a080', highlight: '#40c0a0', interactive: true },
+        { id: 'meeting_phone', type: 'meeting', name: 'Phone Booth', x: 260, y: 30, w: 55, h: 85, color: '#3080c0', highlight: '#40a0e0', interactive: true },
+
+        // CEO Corner (modern glass office feel)
+        { id: 'manager_office', type: 'manager', name: 'CEO Corner', x: 325, y: 30, w: 100, h: 85, color: '#2a3a4a', highlight: '#3a5a7a', interactive: true },
+
+        // Cafe/Kitchen (warm and inviting)
+        { id: 'kitchen', type: 'kitchen', name: 'Cafe', x: 435, y: 30, w: 110, h: 85, color: '#8a5030', highlight: '#aa7050', interactive: true },
+
+        // Quiet Zone (calm colors)
+        { id: 'annex', type: 'annex', name: 'Quiet Zone', x: 555, y: 30, w: 135, h: 85, color: '#405060', highlight: '#607080', interactive: true },
+
+        // Welcome Area (bright and fun)
+        { id: 'reception', type: 'reception', name: 'Welcome Hub', x: 550, y: 220, w: 140, h: 85, color: '#c05080', highlight: '#e070a0', interactive: true },
+
+        // Fun Zone (playful)
+        { id: 'lounge', type: 'lounge', name: 'Fun Zone', x: 550, y: 315, w: 140, h: 85, color: '#7030a0', highlight: '#9050c0', interactive: true },
+
+        // Wellness Room
+        { id: 'bathroom', type: 'bathroom', name: 'Wellness', x: 345, y: 315, w: 85, h: 85, color: '#40a0c0', highlight: '#60c0e0', interactive: true },
+
+        // Storage (clean)
+        { id: 'supply', type: 'supply', name: 'Storage', x: 440, y: 315, w: 50, h: 85, color: '#505050', highlight: '#707070', interactive: true },
+
+        // Game Room Stairs
+        { id: 'warehouse', type: 'warehouse', name: 'Game Room', x: 500, y: 315, w: 40, h: 85, color: '#a04080', highlight: '#c060a0', interactive: true },
+
+        // Open Corridors (light wood floor look)
+        { id: 'hallway1', type: 'hallway', name: 'Main Corridor', x: 30, y: 125, w: 660, h: 85, color: '#c0a080' },
+        { id: 'hallway2', type: 'hallway', name: 'Side Corridor', x: 345, y: 220, w: 195, h: 85, color: '#c0a080' },
+    ];
+
+    // Track hovered area for interactivity
+    let hoveredArea = null;
+    let clickEffects = [];
+
+    // ==================== GAME STATE ====================
+
+    let gameState = {
+        day: 1,
+        time: 540, // 9 AM
+        speed: 0.5,
+        paused: false,
+        characters: [],
+        selectedCharId: null
+    };
+
+    // ==================== CHARACTER DEFINITIONS ====================
+
+    // Hollywood-attractive character configs
+    const CHARACTER_CONFIGS = [
+        {
+            id: 'player',
+            name: 'Alex',
+            isPlayer: true,
+            x: 180, y: 270,
+            skinTone: '#e8c4a0',
+            hairColor: '#2a1a0a',
+            hairStyle: 'spiky',
+            shirtColor: '#2980b9',
+            pantsColor: '#2c3e50',
+            eyeColor: '#3a8a6a', // Striking green
+            role: 'Sales Rep',
+            personality: { conscientiousness: 0.4, extraversion: 0.6, openness: 0.7, agreeableness: 0.7 }
+        },
+        {
+            id: 'marcus',
+            name: 'Marcus',
+            x: 380, y: 75,
+            skinTone: '#8B5A2B', // Morris Chestnut inspired
+            hairColor: '#1a1a1a',
+            hairStyle: 'short',
+            shirtColor: '#1a1a2a',
+            pantsColor: '#0a0a1a',
+            eyeColor: '#3a2a1a', // Deep brown
+            role: 'Regional Manager',
+            personality: { conscientiousness: 0.7, extraversion: 0.85, openness: 0.7, agreeableness: 0.8, neuroticism: 0.3 }
+        },
+        {
+            id: 'brad',
+            name: 'Brad',
+            x: 90, y: 270,
+            skinTone: '#f0d0b0', // Brad Pitt inspired
+            hairColor: '#c4a060',
+            hairStyle: 'spiky',
+            shirtColor: '#34495e',
+            pantsColor: '#2a2a3a',
+            eyeColor: '#5a9aca', // Piercing blue
+            role: 'Account Executive',
+            personality: { conscientiousness: 0.6, extraversion: 0.8, openness: 0.7, agreeableness: 0.6, neuroticism: 0.3 }
+        },
+        {
+            id: 'jennifer',
+            name: 'Jennifer',
+            x: 600, y: 270,
+            skinTone: '#f5dcc8', // Jennifer Aniston inspired
+            hairColor: '#b8860b',
+            hairStyle: 'long',
+            shirtColor: '#e74c3c',
+            pantsColor: '#2a2a3a',
+            eyeColor: '#6a8a6a', // Warm hazel-green
+            role: 'Receptionist',
+            personality: { conscientiousness: 0.7, extraversion: 0.7, openness: 0.8, agreeableness: 0.9, neuroticism: 0.3 }
+        },
+        {
+            id: 'angelina',
+            name: 'Angelina',
+            x: 600, y: 70,
+            skinTone: '#f0d8c8', // Angelina Jolie inspired
+            hairColor: '#1a0a0a',
+            hairStyle: 'long',
+            shirtColor: '#2c2c2c',
+            pantsColor: '#1a1a1a',
+            eyeColor: '#6a9ab0', // Light blue-grey
+            role: 'VP Operations',
+            personality: { conscientiousness: 0.8, extraversion: 0.6, openness: 0.9, agreeableness: 0.5, neuroticism: 0.4 }
+        },
+        {
+            id: 'leo',
+            name: 'Leo',
+            x: 90, y: 370,
+            skinTone: '#e8c8a8', // Leonardo DiCaprio inspired
+            hairColor: '#8B7355',
+            hairStyle: 'receding',
+            shirtColor: '#27ae60',
+            pantsColor: '#2a2a3a',
+            eyeColor: '#4a8ada', // Bright blue
+            role: 'Senior Analyst',
+            personality: { conscientiousness: 0.75, extraversion: 0.65, openness: 0.85, agreeableness: 0.7, neuroticism: 0.4 }
+        },
+        {
+            id: 'jacob',
+            name: 'Jacob',
+            x: 270, y: 270,
+            skinTone: '#e8d0b8', // Jacob Elordi inspired
+            hairColor: '#2a2a2a',
+            hairStyle: 'spiky',
+            shirtColor: '#1a1a2a',
+            pantsColor: '#0a0a1a',
+            eyeColor: '#5a7a5a', // Green-grey
+            role: 'Junior Associate',
+            personality: { conscientiousness: 0.5, extraversion: 0.7, openness: 0.6, agreeableness: 0.6, neuroticism: 0.4 }
+        },
+        {
+            id: 'zoe',
+            name: 'Zoe',
+            x: 180, y: 370,
+            skinTone: '#d4a574', // Mixed/tan complexion
+            hairColor: '#1a1a1a',
+            hairStyle: 'curly',
+            shirtColor: '#9b59b6',
+            pantsColor: '#2a2a3a',
+            eyeColor: '#6a5a4a', // Warm brown
+            role: 'Designer',
+            personality: { conscientiousness: 0.7, extraversion: 0.8, openness: 0.9, agreeableness: 0.8, neuroticism: 0.3 }
+        },
+        {
+            id: 'ryan',
+            name: 'Ryan',
+            x: 650, y: 70,
+            skinTone: '#c68642', // Tan complexion
+            hairColor: '#1a1a1a',
+            hairStyle: 'short',
+            shirtColor: '#2980b9',
+            pantsColor: '#2a2a3a',
+            eyeColor: '#3a3a2a', // Dark brown
+            role: 'Accountant',
+            personality: { conscientiousness: 0.85, extraversion: 0.5, openness: 0.7, agreeableness: 0.7, neuroticism: 0.3 }
+        },
+        {
+            id: 'emma',
+            name: 'Emma',
+            x: 270, y: 370,
+            skinTone: '#f8e8d8', // Fair complexion
+            hairColor: '#c4a882',
+            hairStyle: 'bob',
+            shirtColor: '#e8b4c8',
+            pantsColor: '#3a3a4a',
+            eyeColor: '#5a8a7a', // Blue-green
+            role: 'HR Manager',
+            personality: { conscientiousness: 0.8, extraversion: 0.7, openness: 0.75, agreeableness: 0.85, neuroticism: 0.35 }
+        }
+    ];
+
+    // ==================== RENDERING ====================
+
+    let canvas, ctx;
+
+    function initCanvas() {
+        canvas = document.getElementById('office-canvas');
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = Math.max(720, rect.width);
+        canvas.height = Math.max(450, rect.height - 10);
+        ctx = canvas.getContext('2d');
+
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('mousemove', handleCanvasMouseMove);
+    }
+
+    function handleCanvasClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Add click effect
+        addClickEffect(x, y);
+
+        // Check if clicked on character
+        for (const char of gameState.characters) {
+            if (Math.abs(char.x - x) < 25 && Math.abs(char.y - y) < 35) {
+                selectCharacter(char.id);
+                addClickEffect(char.x, char.y, '#ffd700');
+                return;
+            }
+        }
+
+        // Check if clicked on interactive area
+        for (const area of OFFICE_AREAS) {
+            if (x >= area.x && x <= area.x + area.w && y >= area.y && y <= area.y + area.h) {
+                // Move player
+                const player = gameState.characters.find(c => c.isPlayer);
+                if (player && !player.currentAction) {
+                    player.moveTo(x, y);
+
+                    // Show area-specific message
+                    if (area.interactive) {
+                        const areaMessages = {
+                            meeting: ["Time for a meeting!", "Let's discuss synergy!", "Agenda: TBD"],
+                            manager: ["Entering the lion's den...", "World's Best Boss territory", "Pray he's in a good mood"],
+                            kitchen: ["Coffee time!", "Whose lunch is this?", "Microwave fish?"],
+                            lounge: ["Break time!", "Couch looks comfy...", "Is that foosball?"],
+                            bathroom: ["Nature calls!", "Extended break incoming", "Peace and quiet"],
+                            supply: ["*sneaking*", "Nobody look!", "Secret hideout"],
+                            annex: ["The forgotten zone", "Accounting territory", "So peaceful back here"],
+                            reception: ["Hi Pam!", "Got any messages?", "Nice candy jar"],
+                            warehouse: ["Going downstairs!", "Real workers down there", "Forklift dreams"]
+                        };
+                        const msgs = areaMessages[area.type] || ["Going there!"];
+                        player.say(msgs[Math.floor(Math.random() * msgs.length)], 2000);
+                    }
+                }
+                return;
+            }
+        }
+    }
+
+    function selectCharacter(charId) {
+        gameState.selectedCharId = charId;
+        renderCharacterList();
+        renderSelectedCharPanel();
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // ===== POLISHED REALISTIC OFFICE BACKGROUND =====
+
+        // Rich hardwood floor base with warm tones
+        const floorGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        floorGradient.addColorStop(0, '#c9a66b');
+        floorGradient.addColorStop(0.3, '#b8956a');
+        floorGradient.addColorStop(0.6, '#c4a070');
+        floorGradient.addColorStop(1, '#a8855a');
+        ctx.fillStyle = floorGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Realistic wood plank pattern with grain
+        const plankHeight = 18;
+        const plankWidth = 120;
+        for (let py = 0; py < canvas.height; py += plankHeight) {
+            const rowOffset = (Math.floor(py / plankHeight) % 2) * (plankWidth / 2);
+            for (let px = -plankWidth; px < canvas.width + plankWidth; px += plankWidth) {
+                const actualX = px + rowOffset;
+                // Subtle plank color variation
+                const colorVar = Math.sin(actualX * 0.05 + py * 0.03) * 10;
+                ctx.fillStyle = `rgb(${180 + colorVar}, ${150 + colorVar}, ${100 + colorVar})`;
+                ctx.fillRect(actualX, py, plankWidth - 2, plankHeight - 1);
+
+                // Wood grain lines
+                ctx.strokeStyle = `rgba(90, 60, 30, ${0.08 + Math.random() * 0.04})`;
+                ctx.lineWidth = 0.5;
+                for (let g = 0; g < 3; g++) {
+                    ctx.beginPath();
+                    const grainY = py + 4 + g * 5 + Math.random() * 2;
+                    ctx.moveTo(actualX + 5, grainY);
+                    ctx.bezierCurveTo(actualX + 30, grainY + Math.random() * 2, actualX + 80, grainY - Math.random() * 2, actualX + plankWidth - 10, grainY);
+                    ctx.stroke();
+                }
+
+                // Plank gap shadow
+                ctx.fillStyle = 'rgba(60, 40, 20, 0.3)';
+                ctx.fillRect(actualX + plankWidth - 2, py, 2, plankHeight);
+            }
+            // Horizontal gap
+            ctx.fillStyle = 'rgba(60, 40, 20, 0.2)';
+            ctx.fillRect(0, py + plankHeight - 1, canvas.width, 1);
+        }
+
+        // Floor shine/reflection (subtle)
+        const shineGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+        shineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.02)');
+        shineGradient.addColorStop(1, 'rgba(0, 0, 0, 0.03)');
+        ctx.fillStyle = shineGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // ===== WALLS (Top boundary) =====
+        // Wall background
+        ctx.fillStyle = '#f0ebe3';
+        ctx.fillRect(0, 0, canvas.width, 30);
+
+        // Wall texture (subtle)
+        ctx.fillStyle = 'rgba(200, 190, 180, 0.1)';
+        for (let wx = 0; wx < canvas.width; wx += 4) {
+            if (Math.random() > 0.7) {
+                ctx.fillRect(wx, 0, 2, 30);
+            }
+        }
+
+        // ===== WINDOWS with outside view =====
+        const windowPositions = [80, 250, 420, 590];
+        for (const wx of windowPositions) {
+            // Window frame
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(wx, 2, 70, 26);
+
+            // Sky gradient through window
+            const skyGrad = ctx.createLinearGradient(wx, 2, wx, 28);
+            skyGrad.addColorStop(0, '#87CEEB');
+            skyGrad.addColorStop(0.6, '#b0d4e8');
+            skyGrad.addColorStop(1, '#d4e8f0');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(wx + 3, 4, 64, 20);
+
+            // Distant buildings silhouette
+            ctx.fillStyle = 'rgba(100, 110, 130, 0.4)';
+            ctx.fillRect(wx + 8, 14, 8, 10);
+            ctx.fillRect(wx + 20, 12, 12, 12);
+            ctx.fillRect(wx + 36, 16, 10, 8);
+            ctx.fillRect(wx + 50, 10, 14, 14);
+
+            // Window divider
+            ctx.fillStyle = '#555';
+            ctx.fillRect(wx + 33, 4, 4, 20);
+
+            // Window sill
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(wx - 2, 24, 74, 4);
+
+            // Light glow from window
+            ctx.fillStyle = 'rgba(255, 255, 240, 0.03)';
+            ctx.beginPath();
+            ctx.moveTo(wx, 28);
+            ctx.lineTo(wx - 40, 150);
+            ctx.lineTo(wx + 110, 150);
+            ctx.lineTo(wx + 70, 28);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ===== CEILING WITH REALISTIC LIGHTING =====
+        // Ceiling panels
+        ctx.fillStyle = '#fafafa';
+        ctx.fillRect(0, 0, canvas.width, 30);
+
+        // Ceiling tile grid
+        ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
+        ctx.lineWidth = 1;
+        for (let cx = 0; cx < canvas.width; cx += 60) {
+            ctx.beginPath();
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, 30);
+            ctx.stroke();
+        }
+
+        // Recessed fluorescent panel lights (modern office style)
+        for (let lx = 60; lx < canvas.width - 30; lx += 120) {
+            // Light fixture housing
+            ctx.fillStyle = '#e8e8e8';
+            ctx.beginPath();
+            ctx.roundRect(lx - 25, 4, 50, 22, 2);
+            ctx.fill();
+
+            // Light panel (glowing)
+            const lightGrad = ctx.createLinearGradient(lx - 22, 0, lx + 22, 0);
+            lightGrad.addColorStop(0, 'rgba(255, 255, 245, 0.9)');
+            lightGrad.addColorStop(0.5, 'rgba(255, 255, 250, 1)');
+            lightGrad.addColorStop(1, 'rgba(255, 255, 245, 0.9)');
+            ctx.fillStyle = lightGrad;
+            ctx.beginPath();
+            ctx.roundRect(lx - 22, 6, 44, 18, 1);
+            ctx.fill();
+
+            // Light diffuser lines
+            ctx.strokeStyle = 'rgba(220, 220, 220, 0.5)';
+            ctx.lineWidth = 1;
+            for (let dl = lx - 18; dl < lx + 18; dl += 8) {
+                ctx.beginPath();
+                ctx.moveTo(dl, 7);
+                ctx.lineTo(dl, 23);
+                ctx.stroke();
+            }
+
+            // Light pool on floor (realistic ambient light)
+            const floorGlow = ctx.createRadialGradient(lx, 200, 0, lx, 200, 150);
+            floorGlow.addColorStop(0, 'rgba(255, 255, 240, 0.06)');
+            floorGlow.addColorStop(0.5, 'rgba(255, 255, 235, 0.03)');
+            floorGlow.addColorStop(1, 'rgba(255, 255, 230, 0)');
+            ctx.fillStyle = floorGlow;
+            ctx.beginPath();
+            ctx.ellipse(lx, 200, 100, 150, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Accent pendant lights over key areas (stylish touch)
+        const pendantPositions = [170, 385, 620];
+        for (const lx of pendantPositions) {
+            // Wire
+            ctx.strokeStyle = '#2a2a2a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(lx, 26);
+            ctx.lineTo(lx, 45);
+            ctx.stroke();
+
+            // Modern pendant shade
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.moveTo(lx - 15, 45);
+            ctx.lineTo(lx + 15, 45);
+            ctx.lineTo(lx + 10, 55);
+            ctx.lineTo(lx - 10, 55);
+            ctx.closePath();
+            ctx.fill();
+
+            // Inner glow
+            ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
+            ctx.beginPath();
+            ctx.ellipse(lx, 54, 8, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Warm light cone
+            ctx.fillStyle = 'rgba(255, 240, 200, 0.04)';
+            ctx.beginPath();
+            ctx.moveTo(lx - 8, 55);
+            ctx.lineTo(lx - 50, 150);
+            ctx.lineTo(lx + 50, 150);
+            ctx.lineTo(lx + 8, 55);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ===== WALL DECORATIONS & LIVED-IN DETAILS =====
+
+        // Exit signs (glowing)
+        const exitPositions = [150, 450];
+        for (const ex of exitPositions) {
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(ex - 18, 32, 36, 14);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(ex - 16, 34, 32, 10);
+            ctx.fillStyle = '#003300';
+            ctx.font = 'bold 8px Arial';
+            ctx.fillText('EXIT', ex - 12, 42);
+            // Glow effect
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.05)';
+            ctx.beginPath();
+            ctx.ellipse(ex, 50, 25, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Wall clock
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(320, 45, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Clock hands
+        const clockTime = gameState.time;
+        const hourAngle = ((clockTime / 60) % 12) * (Math.PI / 6) - Math.PI / 2;
+        const minAngle = (clockTime % 60) * (Math.PI / 30) - Math.PI / 2;
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(320, 45);
+        ctx.lineTo(320 + Math.cos(hourAngle) * 6, 45 + Math.sin(hourAngle) * 6);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(320, 45);
+        ctx.lineTo(320 + Math.cos(minAngle) * 9, 45 + Math.sin(minAngle) * 9);
+        ctx.stroke();
+
+        // Fire extinguisher
+        ctx.fillStyle = '#cc0000';
+        ctx.beginPath();
+        ctx.roundRect(15, 160, 10, 25, 2);
+        ctx.fill();
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(17, 155, 6, 8);
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillRect(18, 168, 4, 4);
+
+        // Motivational poster frames
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(8, 50, 24, 30);
+        ctx.fillStyle = '#4a7090';
+        ctx.fillRect(10, 52, 20, 26);
+        ctx.fillStyle = '#fff';
+        ctx.font = '4px Arial';
+        ctx.fillText('HANG', 12, 62);
+        ctx.fillText('IN', 16, 68);
+        ctx.fillText('THERE', 11, 74);
+
+        // Water cooler in hallway
+        ctx.fillStyle = '#e0e8f0';
+        ctx.beginPath();
+        ctx.roundRect(340, 140, 18, 35, 3);
+        ctx.fill();
+        ctx.fillStyle = '#4a90d9';
+        ctx.beginPath();
+        ctx.roundRect(342, 142, 14, 15, 2);
+        ctx.fill();
+        ctx.fillStyle = '#888';
+        ctx.fillRect(346, 165, 6, 8);
+        // Water jug
+        ctx.fillStyle = 'rgba(150, 200, 255, 0.6)';
+        ctx.beginPath();
+        ctx.ellipse(349, 138, 7, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Scattered floor details (coffee stain, paper)
+        ctx.fillStyle = 'rgba(80, 50, 30, 0.08)';
+        ctx.beginPath();
+        ctx.ellipse(280, 175, 8, 6, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dropped paper
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.save();
+        ctx.translate(510, 165);
+        ctx.rotate(0.2);
+        ctx.fillRect(-6, -4, 12, 8);
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(-4, -2);
+        ctx.lineTo(4, -2);
+        ctx.moveTo(-4, 0);
+        ctx.lineTo(4, 0);
+        ctx.moveTo(-4, 2);
+        ctx.lineTo(2, 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Power outlet on wall
+        ctx.fillStyle = '#f5f5f0';
+        ctx.fillRect(680, 65, 10, 14);
+        ctx.fillStyle = '#333';
+        ctx.fillRect(683, 69, 2, 3);
+        ctx.fillRect(686, 69, 2, 3);
+
+        // ===== DRAW POLISHED OFFICE AREAS =====
+        for (const area of OFFICE_AREAS) {
+            // Realistic drop shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.roundRect(area.x + 5, area.y + 5, area.w, area.h, 8);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath();
+            ctx.roundRect(area.x + 3, area.y + 3, area.w, area.h, 8);
+            ctx.fill();
+
+            if (area.type === 'hallway') {
+                // Polished corridor with carpet runner
+                const hallGrad = ctx.createLinearGradient(area.x, area.y, area.x, area.y + area.h);
+                hallGrad.addColorStop(0, '#d4c4a8');
+                hallGrad.addColorStop(0.5, '#c8b89c');
+                hallGrad.addColorStop(1, '#d0c0a4');
+                ctx.fillStyle = hallGrad;
+                ctx.beginPath();
+                ctx.roundRect(area.x, area.y, area.w, area.h, 4);
+                ctx.fill();
+
+                // Carpet runner down center
+                ctx.fillStyle = '#6b4c3a';
+                ctx.beginPath();
+                if (area.w > area.h) {
+                    ctx.roundRect(area.x + 10, area.y + area.h/2 - 15, area.w - 20, 30, 3);
+                } else {
+                    ctx.roundRect(area.x + area.w/2 - 15, area.y + 10, 30, area.h - 20, 3);
+                }
+                ctx.fill();
+
+                // Carpet pattern
+                ctx.strokeStyle = 'rgba(90, 60, 40, 0.3)';
+                ctx.lineWidth = 1;
+                if (area.w > area.h) {
+                    for (let px = area.x + 20; px < area.x + area.w - 20; px += 25) {
+                        ctx.beginPath();
+                        ctx.moveTo(px, area.y + area.h/2 - 12);
+                        ctx.lineTo(px, area.y + area.h/2 + 12);
+                        ctx.stroke();
+                    }
+                }
+
+                // Subtle floor shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 2, area.y + 2, area.w - 4, area.h/3, 2);
+                ctx.fill();
+            } else {
+                // Room with carpet texture
+                ctx.fillStyle = area.color;
+                ctx.beginPath();
+                ctx.roundRect(area.x, area.y, area.w, area.h, 6);
+                ctx.fill();
+
+                // Carpet texture (subtle noise pattern)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+                for (let tx = area.x; tx < area.x + area.w; tx += 4) {
+                    for (let ty = area.y; ty < area.y + area.h; ty += 4) {
+                        if (Math.random() > 0.6) {
+                            ctx.fillRect(tx, ty, 2, 2);
+                        }
+                    }
+                }
+
+                // Inner depth gradient (3D effect)
+                const innerGradient = ctx.createLinearGradient(area.x, area.y, area.x, area.y + area.h);
+                innerGradient.addColorStop(0, 'rgba(255,255,255,0.12)');
+                innerGradient.addColorStop(0.15, 'rgba(255,255,255,0.03)');
+                innerGradient.addColorStop(0.85, 'rgba(0,0,0,0.05)');
+                innerGradient.addColorStop(1, 'rgba(0,0,0,0.15)');
+                ctx.fillStyle = innerGradient;
+                ctx.beginPath();
+                ctx.roundRect(area.x, area.y, area.w, area.h, 6);
+                ctx.fill();
+
+                // Baseboard effect (bottom edge)
+                ctx.fillStyle = 'rgba(60, 50, 40, 0.4)';
+                ctx.fillRect(area.x + 3, area.y + area.h - 4, area.w - 6, 4);
+
+                // Top wall edge shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(area.x + 3, area.y, area.w - 6, 3);
+
+                // Polished border
+                ctx.strokeStyle = area.highlight || shadeColor(area.color, 40);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(area.x + 1, area.y + 1, area.w - 2, area.h - 2, 6);
+                ctx.stroke();
+
+                // Inner highlight line
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(area.x + 6, area.y + 3);
+                ctx.lineTo(area.x + area.w - 6, area.y + 3);
+                ctx.stroke();
+            }
+
+            // Professional room signage
+            if (area.type !== 'hallway') {
+                ctx.font = 'bold 9px Arial, sans-serif';
+                const textWidth = ctx.measureText(area.name).width;
+                const signX = area.x + 5;
+                const signY = area.y + 5;
+                const signW = textWidth + 14;
+                const signH = 16;
+
+                // Sign shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath();
+                ctx.roundRect(signX + 2, signY + 2, signW, signH, 3);
+                ctx.fill();
+
+                // Sign background (frosted glass look)
+                const signGrad = ctx.createLinearGradient(signX, signY, signX, signY + signH);
+                signGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                signGrad.addColorStop(0.5, 'rgba(250, 250, 250, 0.9)');
+                signGrad.addColorStop(1, 'rgba(240, 240, 240, 0.85)');
+                ctx.fillStyle = signGrad;
+                ctx.beginPath();
+                ctx.roundRect(signX, signY, signW, signH, 3);
+                ctx.fill();
+
+                // Sign border
+                ctx.strokeStyle = 'rgba(200, 200, 200, 0.8)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Sign text
+                ctx.fillStyle = '#2a2a2a';
+                ctx.fillText(area.name, signX + 7, signY + 12);
+            }
+        }
+
+        // Draw modern fun furniture
+        for (const area of OFFICE_AREAS) {
+            if (area.type === 'cubicle') {
+                // Modern standing desk
+                ctx.fillStyle = '#f0f0f0';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 12, area.y + 30, 70, 8, 4);
+                ctx.fill();
+                // Desk legs (minimal)
+                ctx.fillStyle = '#333';
+                ctx.fillRect(area.x + 15, area.y + 38, 3, 25);
+                ctx.fillRect(area.x + 78, area.y + 38, 3, 25);
+
+                // iMac style monitor
+                ctx.fillStyle = '#e0e0e0';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 30, area.y + 12, 35, 25, 3);
+                ctx.fill();
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 32, area.y + 14, 31, 19, 2);
+                ctx.fill();
+                ctx.fillStyle = '#4a90d9';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 33, area.y + 15, 29, 17, 2);
+                ctx.fill();
+                // Monitor stand
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillRect(area.x + 45, area.y + 37, 5, 8);
+
+                // Colorful ergonomic chair
+                const chairColors = ['#ff6b35', '#4ecdc4', '#ffe66d', '#c44569', '#6c5ce7'];
+                ctx.fillStyle = chairColors[Math.floor(area.x / 50) % chairColors.length];
+                ctx.beginPath();
+                ctx.ellipse(area.x + 47, area.y + 72, 14, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.roundRect(area.x + 38, area.y + 58, 18, 16, 4);
+                ctx.fill();
+
+                // Small plant
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(area.x + 75, area.y + 22, 8, 10);
+                ctx.fillStyle = '#228B22';
+                ctx.beginPath();
+                ctx.arc(area.x + 79, area.y + 18, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#32CD32';
+                ctx.beginPath();
+                ctx.arc(area.x + 76, area.y + 15, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (area.type === 'meeting') {
+                // Modern round/oval table
+                ctx.fillStyle = '#f5f5f5';
+                ctx.beginPath();
+                ctx.ellipse(area.x + area.w/2, area.y + 45, area.w/2 - 15, 25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Colorful modern chairs
+                const meetingChairColors = ['#ff6b35', '#4ecdc4', '#ffe66d', '#95e1d3', '#c44569'];
+                const numChairs = Math.floor(area.w / 30);
+                for (let i = 0; i < numChairs; i++) {
+                    const angle = (i / numChairs) * Math.PI * 2;
+                    const cx = area.x + area.w/2 + Math.cos(angle) * (area.w/2 - 8);
+                    const cy = area.y + 45 + Math.sin(angle) * 30;
+                    ctx.fillStyle = meetingChairColors[i % meetingChairColors.length];
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Whiteboard with colorful notes
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 5, area.y + 8, 25, 18, 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffeb3b';
+                ctx.fillRect(area.x + 8, area.y + 11, 6, 6);
+                ctx.fillStyle = '#4caf50';
+                ctx.fillRect(area.x + 16, area.y + 11, 6, 6);
+                ctx.fillStyle = '#ff5722';
+                ctx.fillRect(area.x + 12, area.y + 18, 6, 6);
+
+            } else if (area.type === 'kitchen') {
+                // Modern kitchen counter
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 5, area.y + 8, area.w - 10, 22, 4);
+                ctx.fill();
+                ctx.fillStyle = '#f5f5f5';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 6, area.y + 9, area.w - 12, 5, 2);
+                ctx.fill();
+
+                // Espresso machine
+                ctx.fillStyle = '#c0392b';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 12, area.y + 14, 18, 14, 3);
+                ctx.fill();
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(area.x + 15, area.y + 17, 12, 8);
+
+                // Modern fridge
+                ctx.fillStyle = '#34495e';
+                ctx.beginPath();
+                ctx.roundRect(area.x + area.w - 28, area.y + 8, 22, 45, 4);
+                ctx.fill();
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.roundRect(area.x + area.w - 26, area.y + 10, 18, 20, 2);
+                ctx.fill();
+
+                // Cafe table with stools
+                ctx.fillStyle = '#ecf0f1';
+                ctx.beginPath();
+                ctx.ellipse(area.x + 45, area.y + 60, 22, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Colorful bar stools
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(area.x + 30, area.y + 55, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath();
+                ctx.arc(area.x + 60, area.y + 65, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Fruit bowl
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.arc(area.x + 45, area.y + 58, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(area.x + 48, area.y + 60, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (area.type === 'lounge') {
+                // Bean bags
+                ctx.fillStyle = '#9b59b6';
+                ctx.beginPath();
+                ctx.ellipse(area.x + 25, area.y + 55, 18, 14, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.ellipse(area.x + 55, area.y + 60, 16, 12, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Modern curved sofa
+                ctx.fillStyle = '#1abc9c';
+                ctx.beginPath();
+                ctx.moveTo(area.x + 80, area.y + 35);
+                ctx.quadraticCurveTo(area.x + 130, area.y + 30, area.x + 130, area.y + 55);
+                ctx.quadraticCurveTo(area.x + 130, area.y + 75, area.x + 85, area.y + 75);
+                ctx.lineTo(area.x + 85, area.y + 45);
+                ctx.closePath();
+                ctx.fill();
+
+                // Ping pong / game table
+                ctx.fillStyle = '#27ae60';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 15, area.y + 10, 50, 25, 3);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(area.x + 40, area.y + 10);
+                ctx.lineTo(area.x + 40, area.y + 35);
+                ctx.stroke();
+
+                // Arcade machine
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 110, area.y + 10, 22, 35, 3);
+                ctx.fill();
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 113, area.y + 14, 16, 12, 2);
+                ctx.fill();
+
+            } else if (area.type === 'bathroom') {
+                // Modern wellness room
+                ctx.fillStyle = '#ecf0f1';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 8, area.y + 12, 30, 35, 4);
+                ctx.fill();
+                ctx.fillStyle = '#bdc3c7';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 10, area.y + 14, 26, 31, 3);
+                ctx.fill();
+
+                ctx.fillStyle = '#ecf0f1';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 45, area.y + 12, 30, 35, 4);
+                ctx.fill();
+
+                // Modern sink
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 10, area.y + 55, 65, 18, 6);
+                ctx.fill();
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath();
+                ctx.ellipse(area.x + 30, area.y + 64, 10, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(area.x + 55, area.y + 64, 10, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Plant
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(area.x + 70, area.y + 50, 8, 12);
+                ctx.fillStyle = '#27ae60';
+                ctx.beginPath();
+                ctx.arc(area.x + 74, area.y + 45, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (area.type === 'manager') {
+                // Executive standing desk
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 15, area.y + 32, 65, 8, 3);
+                ctx.fill();
+
+                // Dual monitors
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 20, area.y + 15, 25, 18, 2);
+                ctx.roundRect(area.x + 48, area.y + 15, 25, 18, 2);
+                ctx.fill();
+                ctx.fillStyle = '#4a90d9';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 21, area.y + 16, 23, 15, 1);
+                ctx.roundRect(area.x + 49, area.y + 16, 23, 15, 1);
+                ctx.fill();
+
+                // Fancy chair
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.ellipse(area.x + 48, area.y + 68, 16, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.roundRect(area.x + 35, area.y + 48, 26, 22, 5);
+                ctx.fill();
+
+                // Motivational neon sign
+                ctx.fillStyle = '#ff6b35';
+                ctx.font = 'bold 8px sans-serif';
+                ctx.fillText('HUSTLE', area.x + 8, area.y + 15);
+
+                // Trophy/award
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.moveTo(area.x + 85, area.y + 25);
+                ctx.lineTo(area.x + 80, area.y + 40);
+                ctx.lineTo(area.x + 90, area.y + 40);
+                ctx.closePath();
+                ctx.fill();
+
+            } else if (area.type === 'reception') {
+                // Modern curved reception desk
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.moveTo(area.x + 15, area.y + 65);
+                ctx.quadraticCurveTo(area.x + 70, area.y + 30, area.x + 125, area.y + 65);
+                ctx.lineTo(area.x + 115, area.y + 65);
+                ctx.quadraticCurveTo(area.x + 70, area.y + 45, area.x + 25, area.y + 65);
+                ctx.closePath();
+                ctx.fill();
+
+                // White top
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.moveTo(area.x + 18, area.y + 62);
+                ctx.quadraticCurveTo(area.x + 70, area.y + 32, area.x + 122, area.y + 62);
+                ctx.lineTo(area.x + 118, area.y + 62);
+                ctx.quadraticCurveTo(area.x + 70, area.y + 38, area.x + 22, area.y + 62);
+                ctx.closePath();
+                ctx.fill();
+
+                // Computer
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 55, area.y + 15, 30, 22, 2);
+                ctx.fill();
+                ctx.fillStyle = '#4a90d9';
+                ctx.beginPath();
+                ctx.roundRect(area.x + 57, area.y + 17, 26, 17, 1);
+                ctx.fill();
+
+                // Flowers
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(area.x + 20, area.y + 25, 8, 15);
+                ctx.fillStyle = '#e91e63';
+                ctx.beginPath();
+                ctx.arc(area.x + 24, area.y + 20, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ff9800';
+                ctx.beginPath();
+                ctx.arc(area.x + 20, area.y + 22, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+            } else if (area.type === 'annex') {
+                // Focus pods
+                for (let i = 0; i < 2; i++) {
+                    ctx.fillStyle = '#34495e';
+                    ctx.beginPath();
+                    ctx.roundRect(area.x + 12 + i * 65, area.y + 25, 50, 35, 8);
+                    ctx.fill();
+                    // Inner cushion
+                    ctx.fillStyle = '#1abc9c';
+                    ctx.beginPath();
+                    ctx.roundRect(area.x + 16 + i * 65, area.y + 30, 42, 26, 6);
+                    ctx.fill();
+                    // Small desk
+                    ctx.fillStyle = '#ecf0f1';
+                    ctx.beginPath();
+                    ctx.roundRect(area.x + 22 + i * 65, area.y + 38, 30, 4, 2);
+                    ctx.fill();
+                }
+
+                // Bookshelf
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(area.x + area.w - 22, area.y + 12, 16, 50);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(area.x + area.w - 20, area.y + 15, 5, 10);
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(area.x + area.w - 14, area.y + 15, 5, 12);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(area.x + area.w - 20, area.y + 30, 6, 10);
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(area.x + area.w - 13, area.y + 32, 5, 8);
+
+            } else if (area.type === 'supply') {
+                // Modern shelving
+                ctx.fillStyle = '#7f8c8d';
+                for (let sy = 0; sy < 3; sy++) {
+                    ctx.beginPath();
+                    ctx.roundRect(area.x + 5, area.y + 15 + sy * 22, area.w - 10, 4, 2);
+                    ctx.fill();
+                }
+                // Colorful boxes
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(area.x + 10, area.y + 8, 12, 8);
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(area.x + 25, area.y + 8, 10, 8);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(area.x + 12, area.y + 30, 14, 8);
+                ctx.fillStyle = '#9b59b6';
+                ctx.fillRect(area.x + 8, area.y + 52, 16, 10);
+
+            } else if (area.type === 'warehouse') {
+                // Game room stairs with neon
+                ctx.fillStyle = '#2c3e50';
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    ctx.roundRect(area.x + 5, area.y + 15 + i * 17, 28, 14, 3);
+                    ctx.fill();
+                }
+                // Neon arrow
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillText('↓', area.x + 13, area.y + 80);
+                ctx.fillStyle = '#ff6b6b';
+                ctx.fillText('↓', area.x + 14, area.y + 79);
+            }
+        }
+
+        // ===== ADD DECORATIVE PLANTS AROUND OFFICE =====
+        const plantPositions = [
+            { x: 25, y: 200 }, { x: 340, y: 200 }, { x: 540, y: 200 },
+            { x: 25, y: 410 }, { x: 340, y: 410 }, { x: 695, y: 120 }
+        ];
+
+        for (const plant of plantPositions) {
+            // Pot
+            ctx.fillStyle = '#d35400';
+            ctx.beginPath();
+            ctx.moveTo(plant.x - 8, plant.y);
+            ctx.lineTo(plant.x - 6, plant.y - 15);
+            ctx.lineTo(plant.x + 6, plant.y - 15);
+            ctx.lineTo(plant.x + 8, plant.y);
+            ctx.closePath();
+            ctx.fill();
+            // Plant
+            ctx.fillStyle = '#27ae60';
+            ctx.beginPath();
+            ctx.arc(plant.x, plant.y - 22, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.arc(plant.x - 5, plant.y - 28, 8, 0, Math.PI * 2);
+            ctx.arc(plant.x + 6, plant.y - 26, 7, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw hovered area highlight
+        if (hoveredArea) {
+            ctx.fillStyle = 'rgba(78,205,196,0.2)';
+            ctx.fillRect(hoveredArea.x, hoveredArea.y, hoveredArea.w, hoveredArea.h);
+            ctx.strokeStyle = '#4ecdc4';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(hoveredArea.x, hoveredArea.y, hoveredArea.w, hoveredArea.h);
+
+            // Show interaction hint
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            const hintText = `Click to go to ${hoveredArea.name}`;
+            const hintWidth = ctx.measureText(hintText).width + 16;
+            ctx.beginPath();
+            ctx.roundRect(hoveredArea.x + hoveredArea.w/2 - hintWidth/2, hoveredArea.y + hoveredArea.h + 5, hintWidth, 20, 5);
+            ctx.fill();
+            ctx.fillStyle = '#4ecdc4';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(hintText, hoveredArea.x + hoveredArea.w/2, hoveredArea.y + hoveredArea.h + 18);
+            ctx.textAlign = 'left';
+        }
+
+        // Draw click effects
+        updateClickEffects();
+        drawClickEffects();
+
+        // Draw characters (sorted by Y for depth)
+        const sortedChars = [...gameState.characters].sort((a, b) => a.y - b.y);
+
+        for (const char of sortedChars) {
+            drawCharacter(char);
+        }
+    }
+
+    function drawCharacter(char) {
+        const x = char.x;
+        const y = char.y;
+        const app = char.appearance;
+        const dom = char.emotions.getDominantEmotion();
+
+        // ===== THE SIMS STYLE CHARACTER =====
+
+        // Ground shadow (oval)
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 5, 18, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Selection ring (like Sims)
+        if (char.id === gameState.selectedCharId) {
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(x, y + 3, 22, 8, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            // Inner glow
+            ctx.strokeStyle = 'rgba(0,255,136,0.3)';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.ellipse(x, y + 3, 22, 8, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // ===== FLOATING LIGHTNING BOLT (Energy/Mood indicator) =====
+        const boltY = y - 105;
+        const boltBob = Math.sin(Date.now() / 250 + char.id.length) * 4;
+        const boltPulse = 0.9 + Math.sin(Date.now() / 150) * 0.15;
+
+        const moodPercent = char.needs.getOverallMood();
+        const energyPercent = char.needs.energy;
+
+        // Lightning color based on mood/energy
+        let boltColor, boltGlow;
+        if (moodPercent > 75) {
+            boltColor = '#00ff88'; // Bright green - great mood
+            boltGlow = '#00ff88';
+        } else if (moodPercent > 55) {
+            boltColor = '#ffff00'; // Yellow - good
+            boltGlow = '#ffff00';
+        } else if (moodPercent > 35) {
+            boltColor = '#ff8800'; // Orange - meh
+            boltGlow = '#ff8800';
+        } else if (moodPercent > 20) {
+            boltColor = '#ff4444'; // Red - bad
+            boltGlow = '#ff4444';
+        } else {
+            boltColor = '#aa00ff'; // Purple - critical
+            boltGlow = '#aa00ff';
+        }
+
+        ctx.save();
+        ctx.translate(x, boltY + boltBob);
+        ctx.scale(boltPulse, boltPulse);
+
+        // Electric glow effect
+        ctx.shadowColor = boltGlow;
+        ctx.shadowBlur = 20 + Math.sin(Date.now() / 100) * 10;
+
+        // Main lightning bolt shape
+        ctx.fillStyle = boltColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -18);      // Top
+        ctx.lineTo(6, -6);       // Right upper
+        ctx.lineTo(2, -6);       // Inner right upper
+        ctx.lineTo(8, 8);        // Right middle
+        ctx.lineTo(3, 8);        // Inner right middle
+        ctx.lineTo(10, 22);      // Bottom right tip
+        ctx.lineTo(0, 6);        // Center bottom
+        ctx.lineTo(-2, 6);       // Inner left
+        ctx.lineTo(2, -4);       // Back up
+        ctx.lineTo(-4, -4);      // Left
+        ctx.lineTo(0, -18);      // Back to top
+        ctx.closePath();
+        ctx.fill();
+
+        // Inner bright core
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(0, -14);
+        ctx.lineTo(3, -6);
+        ctx.lineTo(1, -6);
+        ctx.lineTo(4, 4);
+        ctx.lineTo(1, 4);
+        ctx.lineTo(5, 14);
+        ctx.lineTo(0, 4);
+        ctx.lineTo(-1, 4);
+        ctx.lineTo(1, -5);
+        ctx.lineTo(-2, -5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+
+        // Critical warning - bolt flickers
+        if (moodPercent < 25) {
+            if (Math.sin(Date.now() / 50) > 0) {
+                ctx.fillStyle = 'rgba(255,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(0, 0, 25, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        ctx.restore();
+
+        // ===== CLASSIC SIMS STYLE CHARACTER =====
+        // Big head, small body, expressive features
+
+        const walkCycle = char.state === 'walking' ? Math.sin(char.animFrame * Math.PI / 2) * 6 : 0;
+        const isFeminine = ['long', 'bob', 'curly'].includes(app.hairStyle);
+        const bodyBounce = char.state === 'walking' ? Math.abs(Math.sin(char.animFrame * Math.PI)) * 2 : 0;
+
+        // ===== STUBBY SIMS LEGS =====
+        ctx.fillStyle = app.pantsColor;
+
+        // Left leg (short and chunky like Sims)
+        ctx.beginPath();
+        ctx.roundRect(x - 10, y - 12 + walkCycle/2, 8, 14 - walkCycle/2, 3);
+        ctx.fill();
+
+        // Right leg
+        ctx.beginPath();
+        ctx.roundRect(x + 2, y - 12 - walkCycle/2, 8, 14 + walkCycle/2, 3);
+        ctx.fill();
+
+        // Sims-style shoes (chunky)
+        ctx.fillStyle = '#2a2a2a';
+        ctx.beginPath();
+        ctx.ellipse(x - 6, y + 4 + walkCycle/3, 7, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 6, y + 4 - walkCycle/3, 7, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ===== SIMS TORSO (blocky, chunky) =====
+        ctx.fillStyle = app.shirtColor;
+
+        // Main torso block
+        ctx.beginPath();
+        ctx.roundRect(x - 14, y - 38 - bodyBounce, 28, 28, 4);
+        ctx.fill();
+
+        // Shirt shading
+        ctx.fillStyle = shadeColor(app.shirtColor, -15);
+        ctx.beginPath();
+        ctx.roundRect(x - 14, y - 38 - bodyBounce, 28, 8, [4, 4, 0, 0]);
+        ctx.fill();
+
+        // Collar/neckline
+        ctx.fillStyle = shadeColor(app.shirtColor, 20);
+        ctx.beginPath();
+        ctx.ellipse(x, y - 40 - bodyBounce, 8, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ===== SIMS ARMS (stubby) =====
+        const armSwing = char.state === 'walking' ? Math.sin(char.animFrame * Math.PI / 2) * 15 : 0;
+        ctx.fillStyle = app.shirtColor;
+
+        // Left arm
+        ctx.save();
+        ctx.translate(x - 14, y - 32 - bodyBounce);
+        ctx.rotate((-25 + armSwing) * Math.PI / 180);
+        ctx.beginPath();
+        ctx.roundRect(-5, 0, 8, 18, 4);
+        ctx.fill();
+        ctx.restore();
+
+        // Right arm
+        ctx.save();
+        ctx.translate(x + 14, y - 32 - bodyBounce);
+        ctx.rotate((25 - armSwing) * Math.PI / 180);
+        ctx.beginPath();
+        ctx.roundRect(-3, 0, 8, 18, 4);
+        ctx.fill();
+        ctx.restore();
+
+        // Hands (round like Sims)
+        ctx.fillStyle = app.skinTone;
+        ctx.beginPath();
+        ctx.arc(x - 22 - armSwing * 0.3, y - 15 - bodyBounce, 5, 0, Math.PI * 2);
+        ctx.arc(x + 22 + armSwing * 0.3, y - 15 - bodyBounce, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ===== SIMS NECK (short and thick) =====
+        ctx.fillStyle = app.skinTone;
+        ctx.beginPath();
+        ctx.roundRect(x - 6, y - 50 - bodyBounce, 12, 14, 3);
+        ctx.fill();
+
+        // ===== BIG SIMS HEAD =====
+        // The iconic oversized Sims head
+
+        const headY = y - 75 - bodyBounce;
+
+        // Head base - big and round
+        ctx.fillStyle = app.skinTone;
+        ctx.beginPath();
+        ctx.ellipse(x, headY, 24, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Face shape overlay for more definition
+        ctx.fillStyle = shadeColor(app.skinTone, 5);
+        ctx.beginPath();
+        ctx.ellipse(x, headY + 5, 22, 24, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cheeks
+        ctx.fillStyle = shadeColor(app.skinTone, 8);
+        ctx.beginPath();
+        ctx.ellipse(x - 14, headY + 5, 8, 10, -0.2, 0, Math.PI * 2);
+        ctx.ellipse(x + 14, headY + 5, 8, 10, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ears
+        ctx.fillStyle = app.skinTone;
+        ctx.beginPath();
+        ctx.ellipse(x - 23, headY, 5, 8, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 23, headY, 5, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Inner ear
+        ctx.fillStyle = shadeColor(app.skinTone, -15);
+        ctx.beginPath();
+        ctx.ellipse(x - 23, headY, 3, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 23, headY, 3, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ===== SIMS HAIR (Big and stylized) =====
+        ctx.fillStyle = app.hairColor;
+
+        if (app.hairStyle === 'spiky') {
+            // Messy spiky top
+            ctx.beginPath();
+            ctx.ellipse(x, headY - 20, 22, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Spikes
+            for (let i = 0; i < 9; i++) {
+                ctx.beginPath();
+                const spikeX = x - 18 + i * 4.5;
+                const spikeH = 8 + (i % 3) * 6;
+                ctx.moveTo(spikeX, headY - 26);
+                ctx.lineTo(spikeX + 2, headY - 26 - spikeH);
+                ctx.lineTo(spikeX + 4, headY - 26);
+                ctx.fill();
+            }
+            // Side hair
+            ctx.fillRect(x - 24, headY - 15, 6, 18);
+            ctx.fillRect(x + 18, headY - 15, 6, 18);
+        } else if (app.hairStyle === 'bob') {
+            // Classic Sims bob
+            ctx.beginPath();
+            ctx.ellipse(x, headY - 15, 26, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Sides
+            ctx.beginPath();
+            ctx.roundRect(x - 26, headY - 10, 12, 30, 6);
+            ctx.roundRect(x + 14, headY - 10, 12, 30, 6);
+            ctx.fill();
+            // Bangs
+            ctx.beginPath();
+            ctx.ellipse(x, headY - 25, 20, 8, 0, 0, Math.PI);
+            ctx.fill();
+            // Shine
+            ctx.fillStyle = shadeColor(app.hairColor, 30);
+            ctx.beginPath();
+            ctx.ellipse(x - 8, headY - 28, 8, 4, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (app.hairStyle === 'long') {
+            // Flowing long hair (classic Sims female)
+            ctx.beginPath();
+            ctx.ellipse(x, headY - 18, 26, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Long flowing sides
+            ctx.beginPath();
+            ctx.moveTo(x - 26, headY - 10);
+            ctx.quadraticCurveTo(x - 30, headY + 20, x - 24, y - 20);
+            ctx.lineTo(x - 18, y - 20);
+            ctx.quadraticCurveTo(x - 20, headY + 10, x - 20, headY - 5);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + 26, headY - 10);
+            ctx.quadraticCurveTo(x + 30, headY + 20, x + 24, y - 20);
+            ctx.lineTo(x + 18, y - 20);
+            ctx.quadraticCurveTo(x + 20, headY + 10, x + 20, headY - 5);
+            ctx.fill();
+            // Shine
+            ctx.fillStyle = shadeColor(app.hairColor, 25);
+            ctx.beginPath();
+            ctx.ellipse(x - 10, headY - 28, 10, 5, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (app.hairStyle === 'short') {
+            // Clean short cut
+            ctx.beginPath();
+            ctx.ellipse(x, headY - 18, 23, 14, 0, Math.PI, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillRect(x - 23, headY - 18, 46, 12);
+            // Texture lines
+            ctx.fillStyle = shadeColor(app.hairColor, -15);
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(x - 18 + i * 8, headY - 25, 3, 8);
+            }
+        } else if (app.hairStyle === 'curly') {
+            // Big curly hair
+            for (let ring = 0; ring < 2; ring++) {
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2 + ring * 0.3;
+                    const radius = 24 + ring * 8;
+                    ctx.fillStyle = ring === 0 ? app.hairColor : shadeColor(app.hairColor, -10);
+                    ctx.beginPath();
+                    ctx.arc(
+                        x + Math.cos(angle) * radius * 0.85,
+                        headY - 8 + Math.sin(angle) * radius * 0.7,
+                        10 - ring * 2, 0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
+        } else if (app.hairStyle === 'bald') {
+            // Shiny bald head
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(x - 6, headY - 20, 12, 8, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (app.hairStyle === 'receding') {
+            // Receding but dignified
+            ctx.beginPath();
+            ctx.moveTo(x - 12, headY - 22);
+            ctx.quadraticCurveTo(x, headY - 18, x + 12, headY - 22);
+            ctx.quadraticCurveTo(x + 20, headY - 30, x + 15, headY - 32);
+            ctx.lineTo(x - 15, headY - 32);
+            ctx.quadraticCurveTo(x - 20, headY - 30, x - 12, headY - 22);
+            ctx.fill();
+            // Side hair
+            ctx.fillRect(x - 24, headY - 12, 8, 16);
+            ctx.fillRect(x + 16, headY - 12, 8, 16);
+        }
+
+        // ===== BIG SIMS EYES =====
+        const eyeY = headY - 2;
+
+        // Eye whites (BIG like classic Sims)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(x - 10, eyeY, 9, 11, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 10, eyeY, 9, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye outline
+        ctx.strokeStyle = '#2a2a2a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(x - 10, eyeY, 9, 11, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 10, eyeY, 9, 11, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Big colorful iris
+        ctx.fillStyle = app.eyeColor || '#4a7c59';
+        const eyeLookX = char.facingRight ? 2 : -2;
+        const eyeLookY = char.state === 'working' ? 2 : 0;
+        ctx.beginPath();
+        ctx.arc(x - 10 + eyeLookX, eyeY + eyeLookY, 6, 0, Math.PI * 2);
+        ctx.arc(x + 10 + eyeLookX, eyeY + eyeLookY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Iris detail ring
+        ctx.strokeStyle = shadeColor(app.eyeColor || '#4a7c59', -20);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(x - 10 + eyeLookX, eyeY + eyeLookY, 5, 0, Math.PI * 2);
+        ctx.arc(x + 10 + eyeLookX, eyeY + eyeLookY, 5, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Pupils (big and expressive)
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(x - 10 + eyeLookX, eyeY + eyeLookY, 3, 0, Math.PI * 2);
+        ctx.arc(x + 10 + eyeLookX, eyeY + eyeLookY, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye sparkles (multiple for that Sims look)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x - 12 + eyeLookX * 0.3, eyeY - 3, 2.5, 0, Math.PI * 2);
+        ctx.arc(x + 8 + eyeLookX * 0.3, eyeY - 3, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x - 8 + eyeLookX, eyeY + 2, 1.5, 0, Math.PI * 2);
+        ctx.arc(x + 12 + eyeLookX, eyeY + 2, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyelashes (for feminine characters)
+        if (isFeminine) {
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            // Left eye
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.PI * 0.7 + (i / 4) * Math.PI * 0.6;
+                ctx.beginPath();
+                ctx.moveTo(x - 10 + Math.cos(angle) * 9, eyeY + Math.sin(angle) * 11);
+                ctx.lineTo(x - 10 + Math.cos(angle) * 13, eyeY + Math.sin(angle) * 15);
+                ctx.stroke();
+            }
+            // Right eye
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.PI * 0.3 - (i / 4) * Math.PI * 0.6;
+                ctx.beginPath();
+                ctx.moveTo(x + 10 + Math.cos(angle) * 9, eyeY + Math.sin(angle) * 11);
+                ctx.lineTo(x + 10 + Math.cos(angle) * 13, eyeY + Math.sin(angle) * 15);
+                ctx.stroke();
+            }
+        }
+
+        // Eyebrows (expressive Sims style)
+        ctx.fillStyle = shadeColor(app.hairColor, 10);
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+
+        const browY = eyeY - 14;
+        if (dom.emotion === 'anger') {
+            // Angry V brows
+            ctx.beginPath();
+            ctx.moveTo(x - 18, browY + 2);
+            ctx.quadraticCurveTo(x - 10, browY - 4, x - 3, browY);
+            ctx.lineTo(x - 3, browY + 3);
+            ctx.quadraticCurveTo(x - 10, browY, x - 18, browY + 5);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + 18, browY + 2);
+            ctx.quadraticCurveTo(x + 10, browY - 4, x + 3, browY);
+            ctx.lineTo(x + 3, browY + 3);
+            ctx.quadraticCurveTo(x + 10, browY, x + 18, browY + 5);
+            ctx.fill();
+        } else if (dom.emotion === 'sadness') {
+            // Sad droopy brows
+            ctx.beginPath();
+            ctx.moveTo(x - 18, browY - 2);
+            ctx.quadraticCurveTo(x - 10, browY - 4, x - 3, browY + 2);
+            ctx.lineTo(x - 3, browY + 5);
+            ctx.quadraticCurveTo(x - 10, browY, x - 18, browY + 1);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + 18, browY - 2);
+            ctx.quadraticCurveTo(x + 10, browY - 4, x + 3, browY + 2);
+            ctx.lineTo(x + 3, browY + 5);
+            ctx.quadraticCurveTo(x + 10, browY, x + 18, browY + 1);
+            ctx.fill();
+        } else {
+            // Normal arched brows
+            ctx.beginPath();
+            ctx.moveTo(x - 18, browY + 2);
+            ctx.quadraticCurveTo(x - 10, browY - 3, x - 3, browY + 1);
+            ctx.lineTo(x - 3, browY + 4);
+            ctx.quadraticCurveTo(x - 10, browY + 1, x - 18, browY + 5);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + 18, browY + 2);
+            ctx.quadraticCurveTo(x + 10, browY - 3, x + 3, browY + 1);
+            ctx.lineTo(x + 3, browY + 4);
+            ctx.quadraticCurveTo(x + 10, browY + 1, x + 18, browY + 5);
+            ctx.fill();
+        }
+
+        // ===== SIMS NOSE (simple but defined) =====
+        ctx.fillStyle = shadeColor(app.skinTone, -12);
+        ctx.beginPath();
+        ctx.moveTo(x, eyeY + 8);
+        ctx.quadraticCurveTo(x - 5, eyeY + 16, x - 4, eyeY + 20);
+        ctx.quadraticCurveTo(x, eyeY + 22, x + 4, eyeY + 20);
+        ctx.quadraticCurveTo(x + 5, eyeY + 16, x, eyeY + 8);
+        ctx.fill();
+
+        // Nose highlight
+        ctx.fillStyle = shadeColor(app.skinTone, 15);
+        ctx.beginPath();
+        ctx.ellipse(x, eyeY + 12, 2, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Nostrils
+        ctx.fillStyle = shadeColor(app.skinTone, -25);
+        ctx.beginPath();
+        ctx.ellipse(x - 3, eyeY + 19, 2, 1.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 3, eyeY + 19, 2, 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ===== SIMS MOUTH (expressive) =====
+        const mouthY = eyeY + 28;
+
+        if (dom.emotion === 'happiness' || dom.emotion === 'excitement') {
+            // Big Sims smile
+            ctx.fillStyle = '#cc6666';
+            ctx.beginPath();
+            ctx.moveTo(x - 10, mouthY);
+            ctx.quadraticCurveTo(x, mouthY + 10, x + 10, mouthY);
+            ctx.quadraticCurveTo(x, mouthY + 4, x - 10, mouthY);
+            ctx.fill();
+            // Teeth
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(x - 8, mouthY + 1);
+            ctx.quadraticCurveTo(x, mouthY + 8, x + 8, mouthY + 1);
+            ctx.quadraticCurveTo(x, mouthY + 3, x - 8, mouthY + 1);
+            ctx.fill();
+            // Tooth line
+            ctx.strokeStyle = '#dddddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, mouthY + 1);
+            ctx.lineTo(x, mouthY + 6);
+            ctx.stroke();
+        } else if (dom.emotion === 'sadness') {
+            // Sad frown
+            ctx.fillStyle = '#bb7777';
+            ctx.beginPath();
+            ctx.moveTo(x - 8, mouthY + 4);
+            ctx.quadraticCurveTo(x, mouthY - 2, x + 8, mouthY + 4);
+            ctx.quadraticCurveTo(x, mouthY + 2, x - 8, mouthY + 4);
+            ctx.fill();
+        } else if (dom.emotion === 'anger') {
+            // Angry grimace
+            ctx.fillStyle = '#aa6666';
+            ctx.beginPath();
+            ctx.roundRect(x - 9, mouthY, 18, 5, 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(x - 7, mouthY + 1, 14, 3, 1);
+            ctx.fill();
+        } else if (dom.emotion === 'anxiety') {
+            // Worried O mouth
+            ctx.fillStyle = '#aa7777';
+            ctx.beginPath();
+            ctx.ellipse(x, mouthY + 3, 5, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#3a2020';
+            ctx.beginPath();
+            ctx.ellipse(x, mouthY + 3, 3, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // Neutral pleasant expression
+            ctx.fillStyle = isFeminine ? '#cc7777' : '#bb8888';
+            ctx.beginPath();
+            ctx.moveTo(x - 7, mouthY);
+            ctx.quadraticCurveTo(x, mouthY + 4, x + 7, mouthY);
+            ctx.quadraticCurveTo(x, mouthY + 2, x - 7, mouthY);
+            ctx.fill();
+        }
+
+        // Blush
+        if (dom.emotion === 'excitement' || (dom.emotion === 'happiness' && dom.intensity > 50)) {
+            ctx.fillStyle = 'rgba(255,150,150,0.35)';
+            ctx.beginPath();
+            ctx.ellipse(x - 16, eyeY + 10, 6, 4, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 16, eyeY + 10, 6, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Face shine/highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.beginPath();
+        ctx.ellipse(x - 12, headY - 15, 6, 10, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ===== NAME TAG =====
+        ctx.fillStyle = char.isPlayer ? 'rgba(0,217,255,0.9)' : 'rgba(0,0,0,0.8)';
+        const nameWidth = ctx.measureText(char.name).width + 16;
+        ctx.beginPath();
+        ctx.roundRect(x - nameWidth/2, y + 10, nameWidth, 16, 4);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(char.name, x, y + 22);
+        ctx.textAlign = 'left';
+
+        // ===== SPEECH BUBBLE =====
+        if (char.speechBubble) {
+            const bubbleX = x;
+            const bubbleY = y - 115;
+            const text = char.speechBubble.substring(0, 25);
+            const textWidth = Math.max(80, ctx.measureText(text).width + 20);
+
+            // Bubble shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.roundRect(bubbleX - textWidth/2 + 3, bubbleY - 12 + 3, textWidth, 28, 10);
+            ctx.fill();
+
+            // Bubble
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(bubbleX - textWidth/2, bubbleY - 12, textWidth, 28, 10);
+            ctx.fill();
+
+            // Pointer
+            ctx.beginPath();
+            ctx.moveTo(bubbleX - 8, bubbleY + 16);
+            ctx.lineTo(bubbleX, bubbleY + 28);
+            ctx.lineTo(bubbleX + 8, bubbleY + 16);
+            ctx.fill();
+
+            // Text
+            ctx.fillStyle = '#333333';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, bubbleX, bubbleY + 5);
+            ctx.textAlign = 'left';
+        }
+
+        // ===== ACTION INDICATOR =====
+        if (char.currentAction && char.state !== 'idle') {
+            const actionIcons = {
+                'working': '💻', 'sitting': '🪑', 'standing': '🧍',
+                'talking': '💬', 'walking': '🚶'
+            };
+            const icon = actionIcons[char.state] || '⚡';
+            ctx.font = '16px sans-serif';
+            ctx.fillText(icon, x + 20, y - 70);
+        }
+    }
+
+    // Helper function to darken/lighten colors
+    function shadeColor(color, percent) {
+        const num = parseInt(color.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+        const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+        const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+        return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    }
+
+    // ==================== UI RENDERING ====================
+
+    function renderCharacterList() {
+        const container = document.getElementById('character-list');
+        container.innerHTML = gameState.characters.map(char => {
+            const dom = char.emotions.getDominantEmotion();
+            const lowestNeed = char.needs.getLowestNeed();
+
+            return `
+                <div class="char-card ${char.id === gameState.selectedCharId ? 'selected' : ''}"
+                     onclick="selectCharacter('${char.id}')">
+                    <div class="char-header">
+                        <div class="char-portrait" style="background:${char.appearance.shirtColor}20;">
+                            <span style="font-size:24px;position:absolute;top:10px;left:12px;">${char.emotions.getEmoji()}</span>
+                        </div>
+                        <div class="char-info">
+                            <h3>${char.name}${char.isPlayer ? ' (You)' : ''}</h3>
+                            <div class="role">${char.role}</div>
+                            <div class="mood" style="color:${dom.intensity > 50 ? '#ffd700' : '#888'}">
+                                ${dom.emotion.charAt(0).toUpperCase() + dom.emotion.slice(1)} ${dom.intensity > 50 ? '!' : ''}
+                            </div>
+                            ${char.currentAction ? `<div class="thought">"${char.currentAction.name}..."</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="needs-mini">
+                        ${renderMiniNeeds(char.needs)}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderMiniNeeds(needs) {
+        const needsList = [
+            { key: 'hunger', icon: '🍔', color: '#ff6b6b' },
+            { key: 'energy', icon: '⚡', color: '#ffd700' },
+            { key: 'social', icon: '💬', color: '#4ecdc4' },
+            { key: 'fun', icon: '🎮', color: '#9b59b6' },
+            { key: 'bladder', icon: '🚽', color: '#3498db' }
+        ];
+
+        return needsList.map(n => `
+            <div class="need-row">
+                <span class="need-icon">${n.icon}</span>
+                <div class="need-bar">
+                    <div class="need-fill ${needs[n.key] < 20 ? 'critical' : ''}"
+                         style="width:${needs[n.key]}%;background:${n.color};"></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderSelectedCharPanel() {
+        const char = gameState.characters.find(c => c.id === gameState.selectedCharId);
+        if (!char) {
+            document.getElementById('selected-char-panel').innerHTML = `
+                <h2>📊 Character Details</h2>
+                <p style="color:#888;font-size:0.8rem;">Click a character to view details</p>
+            `;
+            return;
+        }
+
+        const traits = char.personality.getTraitDescriptions();
+        const area = char.getCurrentArea();
+        const availableActions = area ? getActionsForArea(area.type) : [];
+
+        document.getElementById('selected-char-panel').innerHTML = `
+            <h2>${char.emotions.getEmoji()} ${char.name}</h2>
+
+            <div class="stat-section">
+                <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">📍 Location</h3>
+                <div style="font-size:0.75rem;color:#888;">${area?.name || 'Moving...'}</div>
+            </div>
+
+            <div class="stat-section">
+                <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">💭 Current Activity</h3>
+                <div class="action-queue">
+                    ${char.currentAction ? `
+                        <div class="queue-item">
+                            ${char.currentAction.name}
+                            <div class="progress">
+                                <div class="progress-fill" style="width:${(char.actionProgress / char.currentAction.duration) * 100}%"></div>
+                            </div>
+                        </div>
+                    ` : '<div style="color:#888;font-size:0.75rem;">Idle</div>'}
+                </div>
+            </div>
+
+            <div class="stat-section">
+                <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">🎭 Personality</h3>
+                <div class="personality-traits">
+                    ${traits.map(t => `<span class="trait-badge">${t}</span>`).join('')}
+                </div>
+            </div>
+
+            <div class="stat-section">
+                <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">❤️ Needs</h3>
+                ${renderDetailedNeeds(char.needs)}
+            </div>
+
+            ${char.isPlayer ? `
+                <div class="stat-section">
+                    <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">🎯 Actions</h3>
+                    <div class="action-grid">
+                        ${availableActions.slice(0, 6).map(action => {
+                            const utility = char.calculateActionUtility(action, { nearbyChars: [] });
+                            return `
+                                <button class="action-btn"
+                                        onclick="playerDoAction('${action.id}')"
+                                        ${char.currentAction || char.state === 'walking' ? 'disabled' : ''}>
+                                    <span class="name">${action.name}</span>
+                                    <span class="score">Score: ${Math.round(utility)}</span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : `
+                <div class="stat-section">
+                    <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">🤝 Your Relationship</h3>
+                    ${renderRelationship(char)}
+                </div>
+            `}
+
+            <div class="stat-section">
+                <h3 style="font-size:0.8rem;color:#00d9ff;margin-bottom:8px;">📝 Recent Activity</h3>
+                <div class="memory-log">
+                    ${char.memory.shortTerm.slice(0, 5).map(m => `
+                        <div class="memory-item ${m.impact > 0 ? 'positive' : m.impact < 0 ? 'negative' : ''}">
+                            <span class="time">${formatTime(m.timestamp)}</span> -
+                            ${m.action || m.type}
+                        </div>
+                    `).join('') || '<div style="color:#888">No recent memories</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderDetailedNeeds(needs) {
+        const needsList = [
+            { key: 'hunger', icon: '🍔', name: 'Hunger', color: '#ff6b6b' },
+            { key: 'energy', icon: '⚡', name: 'Energy', color: '#ffd700' },
+            { key: 'social', icon: '💬', name: 'Social', color: '#4ecdc4' },
+            { key: 'fun', icon: '🎮', name: 'Fun', color: '#9b59b6' },
+            { key: 'comfort', icon: '🛋️', name: 'Comfort', color: '#e67e22' },
+            { key: 'hygiene', icon: '🧼', name: 'Hygiene', color: '#1abc9c' },
+            { key: 'bladder', icon: '🚽', name: 'Bladder', color: '#3498db' }
+        ];
+
+        return needsList.map(n => `
+            <div class="need-row" style="margin-bottom:6px;">
+                <span style="width:60px;font-size:0.7rem;">${n.icon} ${n.name}</span>
+                <div class="need-bar" style="height:8px;">
+                    <div class="need-fill ${needs[n.key] < 20 ? 'critical' : ''}"
+                         style="width:${needs[n.key]}%;background:${n.color};"></div>
+                </div>
+                <span style="width:30px;font-size:0.65rem;text-align:right;">${Math.round(needs[n.key])}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderRelationship(char) {
+        const player = gameState.characters.find(c => c.isPlayer);
+        const rel = player.memory.getRelationship(char.id);
+
+        return `
+            <div class="relationship-item">
+                <span>Friendship</span>
+                <div class="rel-bar">
+                    <div class="rel-fill ${rel.friendship >= 0 ? 'positive' : 'negative'}"
+                         style="width:${Math.abs(rel.friendship) / 2}%;"></div>
+                </div>
+                <span>${rel.friendship > 0 ? '+' : ''}${rel.friendship}</span>
+            </div>
+            <div style="font-size:0.65rem;color:#888;margin-top:4px;">
+                Interactions: ${rel.interactionCount}
+            </div>
+        `;
+    }
+
+    function playerDoAction(actionId) {
+        const player = gameState.characters.find(c => c.isPlayer);
+        const action = ACTIONS.find(a => a.id === actionId);
+        if (!player || !action || player.currentAction || player.state === 'walking') return;
+
+        // Auto-resume game if paused (unless modal is open)
+        if (gameState.paused && document.getElementById('end-of-day-modal').style.display !== 'flex') {
+            setSpeed(1); // Resume at normal speed
+        }
+
+        const currentArea = player.getCurrentArea();
+
+        // Check if player needs to move to a different area
+        if (action.requiresArea && (!currentArea || currentArea.type !== action.requiresArea)) {
+            // Find a suitable area to move to
+            const targetArea = OFFICE_AREAS.find(a => a.type === action.requiresArea);
+            if (targetArea) {
+                // Queue the action and move there
+                player.queuedAction = action;
+                player.moveTo(
+                    targetArea.x + 15 + Math.random() * (targetArea.w - 30),
+                    targetArea.y + 15 + Math.random() * (targetArea.h - 30)
+                );
+                player.say(`Heading to ${targetArea.name}...`, 2000);
+                return;
+            }
+        }
+
+        // Start the action immediately
+        player.startAction(action);
+        renderSelectedCharPanel();
+    }
+
+    // Check for queued actions when player stops walking
+    function checkQueuedAction(player) {
+        if (player.queuedAction && player.state === 'idle') {
+            const action = player.queuedAction;
+            player.queuedAction = null;
+            const currentArea = player.getCurrentArea();
+
+            // Verify we're in the right area now
+            if (!action.requiresArea || (currentArea && currentArea.type === action.requiresArea)) {
+                player.startAction(action);
+                renderSelectedCharPanel();
+            }
+        }
+    }
+
+    // ==================== TIME & GAME LOOP ====================
+
+    function formatTime(minutes) {
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.floor(minutes % 60);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+        return `${displayHours}:${mins.toString().padStart(2, '0')} ${period}`;
+    }
+
+    function setSpeed(speed) {
+        gameState.speed = speed;
+        gameState.paused = speed === 0;
+        document.querySelectorAll('.speed-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', [0, 0.5, 1, 2][i] === speed);
+        });
+    }
+
+    function updateTimeDisplay() {
+        const dayOfWeek = getDayOfWeek();
+        const weekNum = getWeekNumber();
+        document.getElementById('day-display').textContent = `${dayOfWeek} (Week ${weekNum})`;
+        document.getElementById('time-display').textContent = formatTime(gameState.time);
+    }
+
+    // ==================== WEEKLY SUMMARY SYSTEM ====================
+
+    const WEEKLY_QUOTES = [
+        // Ferris Bueller inspired
+        '"Life moves pretty fast. If you don\'t stop and look around once in a while, you could miss it." - Ferris Bueller',
+        '"The question isn\'t what are we going to do. The question is what aren\'t we going to do."',
+        '"You\'re still here? It\'s over. Go home. Go!"',
+        '"A person should not believe in an -ism, they should believe in themselves."',
+        '"How can I possibly be expected to handle school on a day like this?"',
+
+        // Weekend wisdom
+        '"Another week survived. Time to forget everything until Monday."',
+        '"Friday: The golden child of the weekdays. The superhero of the workweek."',
+        '"The weekend is here. Time to do nothing and still feel exhausted."',
+        '"I haven\'t been this excited about Friday since last Friday."',
+        '"My weekend is all booked: Netflix, couch, repeat."',
+
+        // Weekly office survival
+        '"5 days of pretending to work. 2 days of recovering from pretending to work."',
+        '"Congratulations! You\'ve completed another week of looking busy."',
+        '"40 hours of my life I\'ll never get back. Worth it for the free coffee."',
+        '"This week\'s accomplishment: Survived 47 meetings and only cried twice."',
+        '"I came, I saw, I made it to Friday."',
+
+        // Corporate philosophy
+        '"The key to a successful week is low expectations and high coffee intake."',
+        '"In this office, making it to Friday is considered a major achievement."',
+        '"They can\'t give you more work on Friday if they can\'t find you."',
+        '"My productivity this week was measured in coffee cups, not deliverables."',
+        '"Work-life balance achieved: I thought about work while living my life."',
+
+        // Motivational parody
+        '"Another week closer to retirement. Only 2,000 more to go!"',
+        '"Dream big. Achieve nothing. Blame the short week."',
+        '"The grind never stops. Except on weekends. And lunch. And bathroom breaks."',
+        '"Success is just failure that hasn\'t been noticed yet."',
+
+        // Weekend anticipation
+        '"TGIF: Thank God It\'s Finally... time to sleep."',
+        '"The best part of this week? It\'s over."',
+        '"Weekend forecast: 100% chance of doing absolutely nothing productive."',
+        '"See you Monday... if I remember what I do here."'
+    ];
+
+    const PERFORMANCE_RANKS = [
+        { minPoints: -200, rank: 'Employee of the Month!', color: '#e94560', sarcastic: '(You worked WAY too hard!)' },
+        { minPoints: -100, rank: 'Dangerously Productive', color: '#ff6b6b', sarcastic: '(HR is watching you)' },
+        { minPoints: -50, rank: 'Suspiciously Efficient', color: '#ff9f43', sarcastic: '(Making others look bad)' },
+        { minPoints: 0, rank: 'Perfectly Adequate', color: '#ffd700', sarcastic: '(The sweet spot)' },
+        { minPoints: 75, rank: 'Master of Disguise', color: '#4ecdc4', sarcastic: '(Looking busy is your superpower)' },
+        { minPoints: 150, rank: 'Corporate Ninja', color: '#27ae60', sarcastic: '(They can\'t fire what they can\'t see)' },
+        { minPoints: 250, rank: 'Legendary Slacker', color: '#9b59b6', sarcastic: '(You\'ve ascended beyond work)' },
+        { minPoints: 400, rank: 'CEO Material', color: '#f39c12', sarcastic: '(Doing nothing at an executive level)' },
+        { minPoints: 600, rank: 'Absolute Legend', color: '#e74c3c', sarcastic: '(They should be paying YOU to not work)' }
+    ];
+
+    let weeklyStats = {
+        slackPoints: 0,
+        meetingsAvoided: 0,
+        workDone: 0,
+        timesSpotted: 0,
+        coworkerShame: [],
+        coffeeDrunk: 0,
+        bathroomTrips: 0
+    };
+
+    function resetWeeklyStats() {
+        weeklyStats = {
+            slackPoints: 0,
+            meetingsAvoided: 0,
+            workDone: 0,
+            timesSpotted: 0,
+            coworkerShame: [],
+            coffeeDrunk: 0,
+            bathroomTrips: 0
+        };
+    }
+
+    function getWeekNumber() {
+        return Math.ceil(gameState.day / 5);
+    }
+
+    function getDayOfWeek() {
+        const dayNum = ((gameState.day - 1) % 5) + 1;
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        return days[dayNum - 1];
+    }
+
+    function showWeeklySummary() {
+        gameState.paused = true;
+
+        const quote = WEEKLY_QUOTES[Math.floor(Math.random() * WEEKLY_QUOTES.length)];
+        const weekNum = getWeekNumber();
+
+        // Calculate rank
+        let rank = PERFORMANCE_RANKS[0];
+        for (const r of PERFORMANCE_RANKS) {
+            if (weeklyStats.slackPoints >= r.minPoints) {
+                rank = r;
+            }
+        }
+
+        // Update modal content
+        document.getElementById('eod-title').textContent = `Week ${weekNum} Complete!`;
+        document.getElementById('eod-subtitle').textContent = `You survived another 5 days!`;
+        document.getElementById('eod-quote').textContent = quote;
+
+        const slackEl = document.getElementById('eod-slack-points');
+        slackEl.textContent = (weeklyStats.slackPoints >= 0 ? '+' : '') + weeklyStats.slackPoints;
+        slackEl.className = 'eod-value ' + (weeklyStats.slackPoints >= 0 ? 'positive' : 'negative');
+
+        document.getElementById('eod-meetings-avoided').textContent = weeklyStats.meetingsAvoided;
+        document.getElementById('eod-work-done').textContent = weeklyStats.workDone;
+        document.getElementById('eod-coffee').textContent = weeklyStats.coffeeDrunk;
+        document.getElementById('eod-bathroom').textContent = weeklyStats.bathroomTrips;
+
+        const rankEl = document.getElementById('eod-rank').querySelector('.rank-value');
+        rankEl.textContent = rank.rank + ' ' + rank.sarcastic;
+        rankEl.style.color = rank.color;
+
+        // Coworker shame section
+        const shameSection = document.getElementById('eod-coworker-shame');
+        if (weeklyStats.coworkerShame.length > 0) {
+            shameSection.style.display = 'block';
+            // Only show unique shames, limit to 5
+            const uniqueShames = [...new Set(weeklyStats.coworkerShame)].slice(0, 5);
+            document.getElementById('eod-shame-list').innerHTML = uniqueShames
+                .map(s => `<div class="shame-item">- ${s}</div>`).join('');
+        } else {
+            shameSection.style.display = 'none';
+        }
+
+        document.getElementById('end-of-day-modal').style.display = 'flex';
+
+        // Reset stats for next week
+        resetWeeklyStats();
+    }
+
+    function closeWeeklySummary() {
+        document.getElementById('end-of-day-modal').style.display = 'none';
+        gameState.paused = false;
+    }
+
+    let lastTime = 0;
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const deltaMs = timestamp - lastTime;
+        lastTime = timestamp;
+
+        if (!gameState.paused) {
+            const deltaMinutes = (deltaMs / 1000) * 15 * gameState.speed; // 15 game minutes per real second at 1x
+            gameState.time += deltaMinutes;
+
+            // End of day - check for end of week (Friday at 6 PM)
+            if (gameState.time >= 1080) { // 6 PM
+                gameState.time = 540;
+                gameState.day++;
+
+                // Show weekly summary every 5 days (end of work week)
+                if ((gameState.day - 1) % 5 === 0) {
+                    showWeeklySummary();
+                }
+            }
+
+            // Update all characters
+            const context = { characters: gameState.characters };
+            for (const char of gameState.characters) {
+                char.update(deltaMinutes, deltaMs, context);
+            }
+
+            // Check for queued player actions after walking
+            const player = gameState.characters.find(c => c.isPlayer);
+            if (player && player.queuedAction && player.state === 'idle') {
+                checkQueuedAction(player);
+            }
+
+            updateTimeDisplay();
+            renderCharacterList();
+            updateActionBar();
+            if (gameState.selectedCharId) {
+                renderSelectedCharPanel();
+            }
+        }
+
+        render();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ==================== CHARACTER CREATOR ====================
+
+    function openCharacterCreator() {
+        document.getElementById('character-creator-modal').style.display = 'flex';
+        document.getElementById('new-char-name').value = '';
+        document.getElementById('new-char-name').focus();
+    }
+
+    function closeCharacterCreator() {
+        document.getElementById('character-creator-modal').style.display = 'none';
+    }
+
+    // Color picker selection
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('color-option')) {
+            const picker = e.target.parentElement;
+            picker.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+            e.target.classList.add('selected');
+        }
+        if (e.target.classList.contains('style-option')) {
+            const picker = e.target.parentElement;
+            picker.querySelectorAll('.style-option').forEach(o => o.classList.remove('selected'));
+            e.target.classList.add('selected');
+        }
+    });
+
+    function createNewCharacter() {
+        const name = document.getElementById('new-char-name').value.trim();
+        if (!name) {
+            alert('Please enter a name!');
+            return;
+        }
+
+        const role = document.getElementById('new-char-role').value;
+        const skinTone = document.querySelector('#skin-picker .selected').dataset.color;
+        const hairColor = document.querySelector('#hair-color-picker .selected').dataset.color;
+        const hairStyle = document.querySelector('#hair-style-picker .selected').dataset.style;
+        const shirtColor = document.querySelector('#shirt-picker .selected').dataset.color;
+
+        const conscientiousness = document.getElementById('trait-conscientious').value / 100;
+        const extraversion = document.getElementById('trait-extraversion').value / 100;
+        const openness = document.getElementById('trait-openness').value / 100;
+
+        // Find a good spawn location
+        const spawnAreas = OFFICE_AREAS.filter(a => a.type === 'cubicle' || a.type === 'hallway');
+        const spawnArea = spawnAreas[Math.floor(Math.random() * spawnAreas.length)];
+
+        const newChar = new Character({
+            id: 'char_' + Date.now(),
+            name: name,
+            x: spawnArea.x + 20 + Math.random() * (spawnArea.w - 40),
+            y: spawnArea.y + 20 + Math.random() * (spawnArea.h - 40),
+            skinTone: skinTone,
+            hairColor: hairColor,
+            hairStyle: hairStyle,
+            shirtColor: shirtColor,
+            pantsColor: '#2a2a3a',
+            eyeColor: ['#4a7c59', '#5a6a7a', '#6a5a4a', '#4a6090', '#3a2a2a'][Math.floor(Math.random() * 5)],
+            role: role,
+            personality: {
+                conscientiousness: conscientiousness,
+                extraversion: extraversion,
+                openness: openness,
+                agreeableness: Math.random(),
+                neuroticism: Math.random()
+            }
+        });
+
+        gameState.characters.push(newChar);
+        closeCharacterCreator();
+        renderCharacterList();
+
+        // Show welcome message
+        newChar.say(`Hi! I'm ${name}, the new ${role}!`, 4000);
+
+        // Add click effect at spawn
+        clickEffects.push({
+            x: newChar.x,
+            y: newChar.y,
+            radius: 0,
+            maxRadius: 50,
+            alpha: 1,
+            color: '#4ecdc4'
+        });
+    }
+
+    // ==================== PLAYER ACTION BAR ====================
+
+    function updateActionBar() {
+        const player = gameState.characters.find(c => c.isPlayer);
+        if (!player) return;
+
+        const area = player.getCurrentArea();
+        const quickActions = [
+            { icon: '💻', label: 'Work', action: 'work_hard', area: 'cubicle' },
+            { icon: '😎', label: 'Slack', action: 'pretend_work', area: 'cubicle' },
+            { icon: '💬', label: 'Chat', action: 'chat', area: null },
+            { icon: '☕', label: 'Coffee', action: 'coffee', area: 'kitchen' },
+            { icon: '🎮', label: 'Play', action: 'games', area: 'lounge' },
+            { icon: '🚽', label: 'Break', action: 'bathroom_break_extended', area: 'bathroom' },
+            { icon: '😴', label: 'Nap', action: 'nap', area: 'lounge' },
+            { icon: '🎭', label: 'Prank', action: 'prank_coworker', area: 'cubicle' },
+        ];
+
+        const container = document.getElementById('action-bar-buttons');
+        container.innerHTML = quickActions.map(qa => {
+            const action = ACTIONS.find(a => a.id === qa.action);
+            const available = !qa.area || (area && (area.type === qa.area || qa.area === null));
+            const disabled = !available || player.currentAction || player.state === 'walking';
+
+            return `
+                <button class="action-bar-btn" onclick="playerDoAction('${qa.action}')" ${disabled ? 'disabled' : ''}>
+                    <span class="icon">${qa.icon}</span>
+                    <span class="label">${qa.label}</span>
+                </button>
+            `;
+        }).join('');
+
+        // Also update the action menu
+        updateActionMenu();
+    }
+
+    // ==================== ACTION MENU SYSTEM ====================
+
+    let selectedActionCategory = 'all';
+
+    // Category tab click handler
+    document.getElementById('action-category-tabs').addEventListener('click', (e) => {
+        if (e.target.classList.contains('action-category-tab')) {
+            selectedActionCategory = e.target.dataset.category;
+            document.querySelectorAll('.action-category-tab').forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            updateActionMenu();
+        }
+    });
+
+    function updateActionMenu() {
+        const player = gameState.characters.find(c => c.isPlayer);
+        if (!player) return;
+
+        const area = player.getCurrentArea();
+
+        // Update location indicator
+        const locationEl = document.getElementById('location-indicator');
+        locationEl.textContent = area ? `📍 Location: ${area.name}` : '📍 Location: Hallway';
+
+        // Update current action display
+        const currentActionDisplay = document.getElementById('current-action-display');
+        if (player.currentAction) {
+            currentActionDisplay.style.display = 'block';
+            document.getElementById('current-action-name').textContent = player.currentAction.name;
+            const progress = (player.actionProgress / player.currentAction.duration) * 100;
+            document.getElementById('current-action-progress').style.width = `${progress}%`;
+        } else {
+            currentActionDisplay.style.display = 'none';
+        }
+
+        // Get ALL actions (not just current area)
+        let allActions = [...ACTIONS];
+
+        // Filter out coworker-only actions
+        allActions = allActions.filter(a => !a.isCoworkerAction);
+
+        // Filter by category
+        if (selectedActionCategory !== 'all') {
+            allActions = allActions.filter(a => a.category === selectedActionCategory);
+        }
+
+        // Render action list
+        const actionList = document.getElementById('action-list');
+        const isDisabled = player.currentAction || player.state === 'walking';
+
+        // Area name lookup
+        const areaNames = {
+            'cubicle': '🖥️ Desk',
+            'meeting': '📋 Meeting Room',
+            'kitchen': '☕ Cafe',
+            'bathroom': '🚽 Bathroom',
+            'lounge': '🎮 Fun Zone',
+            'manager': '👔 CEO Office',
+            'reception': '🛎️ Reception',
+            'supply': '📦 Supply Closet'
+        };
+
+        actionList.innerHTML = allActions.map(action => {
+            const pointsClass = action.slackPoints > 0 ? 'positive' : (action.slackPoints < 0 ? 'negative' : 'neutral');
+            const pointsText = action.slackPoints > 0 ? `+${action.slackPoints}` : (action.slackPoints < 0 ? action.slackPoints : '0');
+
+            // Check if player needs to move for this action
+            const needsMove = action.requiresArea && (!area || area.type !== action.requiresArea);
+            const locationTag = action.requiresArea ? areaNames[action.requiresArea] || action.requiresArea : '🌐 Anywhere';
+
+            // Generate short description
+            let desc = action.speech ? action.speech[0].substring(0, 25) : `${action.category}`;
+            if (desc.length > 25) desc = desc.substring(0, 22) + '...';
+
+            return `
+                <div class="action-item ${isDisabled ? 'disabled' : ''} ${needsMove ? 'needs-move' : ''}" onclick="${isDisabled ? '' : `playerDoAction('${action.id}')`}">
+                    <div class="action-item-info">
+                        <div class="action-item-name">${needsMove ? '🚶 ' : ''}${action.name}</div>
+                        <div class="action-item-desc">${locationTag} • ${action.duration}min</div>
+                    </div>
+                    <div class="action-item-points ${pointsClass}">${pointsText}</div>
+                </div>
+            `;
+        }).join('');
+
+        if (allActions.length === 0) {
+            actionList.innerHTML = '<div style="color:#666;text-align:center;padding:20px;font-size:0.8rem;">No actions in this category.</div>';
+        }
+    }
+
+    // ==================== INTERACTIVE OFFICE ====================
+
+    function handleCanvasMouseMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        hoveredArea = null;
+        for (const area of OFFICE_AREAS) {
+            if (area.interactive && x >= area.x && x <= area.x + area.w && y >= area.y && y <= area.y + area.h) {
+                hoveredArea = area;
+                canvas.style.cursor = 'pointer';
+                break;
+            }
+        }
+        if (!hoveredArea) {
+            canvas.style.cursor = 'crosshair';
+        }
+    }
+
+    function addClickEffect(x, y, color = '#4ecdc4') {
+        clickEffects.push({
+            x, y,
+            radius: 0,
+            maxRadius: 40,
+            alpha: 1,
+            color: color
+        });
+    }
+
+    function updateClickEffects() {
+        clickEffects = clickEffects.filter(effect => {
+            effect.radius += 3;
+            effect.alpha -= 0.05;
+            return effect.alpha > 0;
+        });
+    }
+
+    function drawClickEffects() {
+        for (const effect of clickEffects) {
+            ctx.strokeStyle = effect.color;
+            ctx.globalAlpha = effect.alpha;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // ==================== INITIALIZATION ====================
+
+    function init() {
+        // Create characters
+        gameState.characters = CHARACTER_CONFIGS.map(config => new Character(config));
+
+        // Select player by default
+        gameState.selectedCharId = 'player';
+
+        // Initialize canvas
+        initCanvas();
+
+        // Initial render
+        renderCharacterList();
+        renderSelectedCharPanel();
+        updateTimeDisplay();
+        updateActionBar();
+
+        // Start game loop
+        requestAnimationFrame(gameLoop);
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            initCanvas();
+        });
+    }
+
+    // Start
+    init();
+    </script>
+</body>
+</html>
