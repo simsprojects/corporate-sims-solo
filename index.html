@@ -4492,8 +4492,7 @@
                             const utility = char.calculateActionUtility(action, { nearbyChars: [] });
                             return `
                                 <button class="action-btn"
-                                        onclick="playerDoAction('${action.id}')"
-                                        ${char.currentAction || char.state === 'walking' ? 'disabled' : ''}>
+                                        onclick="playerDoAction('${action.id}')">
                                     <span class="name">${action.name}</span>
                                     <span class="score">Score: ${Math.round(utility)}</span>
                                 </button>
