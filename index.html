@@ -4552,11 +4552,18 @@
         // SINGLE-PLAYER: original logic
         const player = gameState.characters.find(c => c.isPlayer);
         const action = ACTIONS.find(a => a.id === actionId);
-        if (!player || !action || player.currentAction || player.state === 'walking') return;
+        if (!player || !action) return;
 
         // Auto-resume game if paused (unless modal is open)
         if (gameState.paused && document.getElementById('end-of-day-modal').style.display !== 'flex') {
             setSpeed(1); // Resume at normal speed
+        }
+
+        // If already doing something, cancel it and switch to the new action
+        if (player.currentAction) {
+            player.currentAction = null;
+            player.actionProgress = 0;
+            player.state = 'idle';
         }
 
         const currentArea = player.getCurrentArea();
