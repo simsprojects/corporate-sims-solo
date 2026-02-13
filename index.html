@@ -861,9 +861,71 @@
             pointer-events: none;
             z-index: 50;
         }
+        /* ==================== MULTIPLAYER LOBBY ==================== */
+        .mp-lobby-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%);
+            z-index: 9999;
+            justify-content: center; align-items: center;
+            flex-direction: column; gap: 20px;
+        }
+        .mp-lobby-box {
+            background: linear-gradient(180deg, #1a2a4a 0%, #0f1f3a 100%);
+            border: 2px solid #3a5a8a; border-radius: 16px;
+            padding: 30px; width: 380px; text-align: center;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+        }
+        .mp-lobby-box h1 {
+            font-size: 1.5rem; margin-bottom: 4px;
+            background: linear-gradient(135deg, #ffd700, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .mp-lobby-box .subtitle { color: #8899aa; font-size: 0.8rem; margin-bottom: 20px; }
+        .mp-lobby-box label { display: block; text-align: left; font-size: 0.75rem; color: #8899aa; margin-bottom: 4px; }
+        .mp-lobby-box input {
+            width: 100%; padding: 8px 12px; margin-bottom: 12px;
+            border: 1px solid #2a4a6a; border-radius: 6px;
+            background: #0a1a2a; color: white; font-size: 0.9rem; outline: none;
+        }
+        .mp-lobby-box input:focus { border-color: #4ecdc4; box-shadow: 0 0 8px rgba(78,205,196,0.3); }
+        .mp-lobby-btns { display: flex; gap: 10px; margin-top: 16px; }
+        .mp-lobby-btns button {
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-join-online {
+            background: linear-gradient(180deg, #4ecdc4 0%, #3ab8b0 100%);
+            color: #0a0a12;
+        }
+        .btn-join-online:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(78,205,196,0.4); }
+        .btn-play-offline {
+            background: linear-gradient(180deg, #2a4a6a 0%, #1a3a5a 100%);
+            color: #ccc; border: 1px solid #3a5a8a;
+        }
+        .btn-play-offline:hover { transform: translateY(-1px); background: linear-gradient(180deg, #3a5a7a 0%, #2a4a6a 100%); }
+        .mp-status { font-size: 0.7rem; color: #4ecdc4; margin-top: 10px; min-height: 1.2em; }
     </style>
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" defer></script>
 </head>
 <body>
+    <!-- MULTIPLAYER LOBBY OVERLAY -->
+    <div class="mp-lobby-overlay" id="mp-lobby-overlay">
+        <div class="mp-lobby-box">
+            <h1>🎬 Hard Workers Finish Last</h1>
+            <div class="subtitle">The Art of Looking Busy — Multiplayer</div>
+            <label for="mp-name">Your Name</label>
+            <input type="text" id="mp-name" placeholder="Enter your name..." maxlength="12" value="">
+            <label for="mp-room">Room Name</label>
+            <input type="text" id="mp-room" placeholder="default" maxlength="50" value="default">
+            <div class="mp-lobby-btns">
+                <button class="btn-play-offline" onclick="startOffline()">Play Offline</button>
+                <button class="btn-join-online" onclick="startMultiplayer()">Join Online</button>
+            </div>
+            <div class="mp-status" id="mp-status"></div>
+        </div>
+    </div>
+
     <div class="game-wrapper">
         <header class="header">
             <h1>🎬 Hard Workers Finish Last</h1>
@@ -879,6 +941,7 @@
                     <button class="speed-btn" onclick="setSpeed(1)">▶▶</button>
                     <button class="speed-btn" onclick="setSpeed(2)">▶▶▶</button>
                 </div>
+                <button class="speed-btn" onclick="clearSave()" title="Reset game to defaults" style="margin-left:8px;font-size:0.75rem;">🗑️ Reset</button>
             </div>
         </header>
 
@@ -1341,6 +1404,139 @@
             return this.shortTerm.filter(m => m.involvedChar === charId);
         }
     }
+
+    // ==================== SAVE / LOAD SYSTEM ====================
+
+    const SAVE_KEY = 'corporate-sims-save';
+    let lastSaveTime = 0;
+    const SAVE_INTERVAL = 30000; // Auto-save every 30 seconds
+
+    function serializeCharacter(char) {
+        // Convert relationships Map to plain object
+        const rels = {};
+        if (char.memory && char.memory.relationships) {
+            for (const [k, v] of char.memory.relationships) {
+                rels[k] = { ...v };
+            }
+        }
+        return {
+            id: char.id, name: char.name, isPlayer: char.isPlayer,
+            x: char.x, y: char.y, role: char.role,
+            appearance: { ...char.appearance },
+            personality: {
+                openness: char.personality.openness,
+                conscientiousness: char.personality.conscientiousness,
+                extraversion: char.personality.extraversion,
+                agreeableness: char.personality.agreeableness,
+                neuroticism: char.personality.neuroticism
+            },
+            needs: {
+                hunger: char.needs.hunger, energy: char.needs.energy,
+                social: char.needs.social, comfort: char.needs.comfort,
+                fun: char.needs.fun, hygiene: char.needs.hygiene,
+                bladder: char.needs.bladder
+            },
+            emotions: {
+                happiness: char.emotions.happiness, anger: char.emotions.anger,
+                sadness: char.emotions.sadness, anxiety: char.emotions.anxiety,
+                boredom: char.emotions.boredom, excitement: char.emotions.excitement
+            },
+            slackPoints: char.slackPoints,
+            relationships: rels,
+            shortTermMemory: char.memory.shortTerm.slice(0, 10),
+            longTermMemory: char.memory.longTerm.slice(0, 20)
+        };
+    }
+
+    function deserializeCharacter(data) {
+        const char = new Character({
+            id: data.id, name: data.name, isPlayer: data.isPlayer,
+            x: data.x, y: data.y, role: data.role,
+            skinTone: data.appearance.skinTone,
+            hairColor: data.appearance.hairColor,
+            hairStyle: data.appearance.hairStyle,
+            shirtColor: data.appearance.shirtColor,
+            pantsColor: data.appearance.pantsColor,
+            eyeColor: data.appearance.eyeColor,
+            personality: data.personality
+        });
+        // Restore needs
+        if (data.needs) {
+            char.needs.hunger = data.needs.hunger;
+            char.needs.energy = data.needs.energy;
+            char.needs.social = data.needs.social;
+            char.needs.comfort = data.needs.comfort;
+            char.needs.fun = data.needs.fun;
+            char.needs.hygiene = data.needs.hygiene;
+            char.needs.bladder = data.needs.bladder;
+        }
+        // Restore emotions
+        if (data.emotions) {
+            char.emotions.happiness = data.emotions.happiness;
+            char.emotions.anger = data.emotions.anger;
+            char.emotions.sadness = data.emotions.sadness;
+            char.emotions.anxiety = data.emotions.anxiety;
+            char.emotions.boredom = data.emotions.boredom;
+            char.emotions.excitement = data.emotions.excitement;
+        }
+        // Restore stats
+        char.slackPoints = data.slackPoints || 0;
+        // Restore relationships
+        if (data.relationships) {
+            for (const [k, v] of Object.entries(data.relationships)) {
+                char.memory.relationships.set(k, v);
+            }
+        }
+        // Restore memories
+        if (data.shortTermMemory) char.memory.shortTerm = data.shortTermMemory;
+        if (data.longTermMemory) char.memory.longTerm = data.longTermMemory;
+        return char;
+    }
+
+    function saveGame() {
+        try {
+            const save = {
+                version: 1,
+                timestamp: Date.now(),
+                gameState: {
+                    day: gameState.day,
+                    time: gameState.time,
+                    speed: gameState.speed
+                },
+                characters: gameState.characters.map(c => serializeCharacter(c))
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+        } catch (e) {
+            console.warn('[Save] Failed:', e.message);
+        }
+    }
+
+    function loadGame() {
+        try {
+            const raw = localStorage.getItem(SAVE_KEY);
+            if (!raw) return null;
+            const save = JSON.parse(raw);
+            if (!save || !save.characters || save.characters.length === 0) return null;
+            return save;
+        } catch (e) {
+            console.warn('[Load] Failed:', e.message);
+            return null;
+        }
+    }
+
+    function clearSave() {
+        if (confirm('Reset game? This will delete all your custom characters and progress.')) {
+            localStorage.removeItem(SAVE_KEY);
+            location.reload();
+        }
+    }
+
+    // Save on page close
+    window.addEventListener('beforeunload', () => {
+        if (!multiplayerMode && gameState.characters.length > 0) {
+            saveGame();
+        }
+    });
 
     /**
      * CHARACTER CLASS
@@ -2424,6 +2620,10 @@
 
     // ==================== GAME STATE ====================
 
+    let multiplayerMode = false;
+    let socket = null;
+    let myPlayerId = null;
+
     let gameState = {
         day: 1,
         time: 540, // 9 AM
@@ -2608,7 +2808,13 @@
                 // Move player
                 const player = gameState.characters.find(c => c.isPlayer);
                 if (player && !player.currentAction) {
-                    player.moveTo(x, y);
+                    if (multiplayerMode && socket) {
+                        // Multiplayer: send move command to server
+                        socket.emit('player:move', { targetX: x, targetY: y });
+                    } else {
+                        // Single-player: move locally
+                        player.moveTo(x, y);
+                    }
 
                     // Show area-specific message
                     if (area.interactive) {
@@ -2624,7 +2830,7 @@
                             warehouse: ["Going downstairs!", "Real workers down there", "Forklift dreams"]
                         };
                         const msgs = areaMessages[area.type] || ["Going there!"];
-                        player.say(msgs[Math.floor(Math.random() * msgs.length)], 2000);
+                        if (!multiplayerMode) player.say(msgs[Math.floor(Math.random() * msgs.length)], 2000);
                     }
                 }
                 return;
@@ -4337,6 +4543,13 @@
     }
 
     function playerDoAction(actionId) {
+        // MULTIPLAYER: send action to server, let server handle it
+        if (multiplayerMode && socket) {
+            socket.emit('action:perform', { actionId: actionId });
+            return;
+        }
+
+        // SINGLE-PLAYER: original logic
         const player = gameState.characters.find(c => c.isPlayer);
         const action = ACTIONS.find(a => a.id === actionId);
         if (!player || !action || player.currentAction || player.state === 'walking') return;
@@ -4558,28 +4771,54 @@
         const deltaMs = timestamp - lastTime;
         lastTime = timestamp;
 
-        if (!gameState.paused) {
-            const deltaMinutes = (deltaMs / 1000) * 15 * gameState.speed; // 15 game minutes per real second at 1x
+        if (multiplayerMode) {
+            // MULTIPLAYER: server is authoritative, just interpolate + render
+            const now = performance.now();
+            for (const char of gameState.characters) {
+                if (char._serverX !== undefined) {
+                    const elapsed = now - (char._interpStart || now);
+                    let t = Math.min(elapsed / 100, 1.0);
+                    t = 1 - Math.pow(1 - t, 3); // ease-out cubic
+                    char.x = (char._prevX || char.x) + (char._serverX - (char._prevX || char.x)) * t;
+                    char.y = (char._prevY || char.y) + (char._serverY - (char._prevY || char.y)) * t;
+                }
+                // Still update animation locally for smooth visuals
+                char.animTimer += deltaMs;
+                if (char.animTimer > 200) {
+                    char.animTimer = 0;
+                    char.animFrame = (char.animFrame + 1) % 4;
+                }
+                // Decay speech timer
+                if (char.speechTimer > 0) {
+                    char.speechTimer -= deltaMs;
+                    if (char.speechTimer <= 0) {
+                        char.speechBubble = null;
+                        char.speechTimer = 0;
+                    }
+                }
+            }
+            updateTimeDisplay();
+            renderCharacterList();
+            updateActionBar();
+            if (gameState.selectedCharId) renderSelectedCharPanel();
+        } else if (!gameState.paused) {
+            // SINGLE-PLAYER: original logic
+            const deltaMinutes = (deltaMs / 1000) * 15 * gameState.speed;
             gameState.time += deltaMinutes;
 
-            // End of day - check for end of week (Friday at 6 PM)
-            if (gameState.time >= 1080) { // 6 PM
+            if (gameState.time >= 1080) {
                 gameState.time = 540;
                 gameState.day++;
-
-                // Show weekly summary every 5 days (end of work week)
                 if ((gameState.day - 1) % 5 === 0) {
                     showWeeklySummary();
                 }
             }
 
-            // Update all characters
             const context = { characters: gameState.characters };
             for (const char of gameState.characters) {
                 char.update(deltaMinutes, deltaMs, context);
             }
 
-            // Check for queued player actions after walking
             const player = gameState.characters.find(c => c.isPlayer);
             if (player && player.queuedAction && player.state === 'idle') {
                 checkQueuedAction(player);
@@ -4590,6 +4829,12 @@
             updateActionBar();
             if (gameState.selectedCharId) {
                 renderSelectedCharPanel();
+            }
+
+            // Auto-save every 30 seconds
+            if (timestamp - lastSaveTime > SAVE_INTERVAL) {
+                lastSaveTime = timestamp;
+                saveGame();
             }
         }
 
@@ -4668,6 +4913,7 @@
         gameState.characters.push(newChar);
         closeCharacterCreator();
         renderCharacterList();
+        if (!multiplayerMode) saveGame(); // Persist new character
 
         // Show welcome message
         newChar.say(`Hi! I'm ${name}, the new ${role}!`, 4000);
@@ -4862,8 +5108,18 @@
     // ==================== INITIALIZATION ====================
 
     function init() {
-        // Create characters
-        gameState.characters = CHARACTER_CONFIGS.map(config => new Character(config));
+        // Try loading saved game first
+        const save = loadGame();
+        if (save && save.characters && save.characters.length > 0) {
+            console.log('[Init] Loading saved game (' + save.characters.length + ' characters)');
+            gameState.characters = save.characters.map(c => deserializeCharacter(c));
+            gameState.day = save.gameState.day || 1;
+            gameState.time = save.gameState.time || 540;
+            gameState.speed = save.gameState.speed || 0.5;
+        } else {
+            // No save — create from defaults
+            gameState.characters = CHARACTER_CONFIGS.map(config => new Character(config));
+        }
 
         // Select player by default
         gameState.selectedCharId = 'player';
@@ -4886,8 +5142,285 @@
         });
     }
 
-    // Start
-    init();
+    // ==================== MULTIPLAYER FUNCTIONS ====================
+
+    function startOffline() {
+        document.getElementById('mp-lobby-overlay').style.display = 'none';
+        init();
+    }
+
+    function startMultiplayer() {
+        const nameInput = document.getElementById('mp-name');
+        const roomInput = document.getElementById('mp-room');
+        const statusEl = document.getElementById('mp-status');
+        const name = nameInput.value.trim();
+        const room = roomInput.value.trim() || 'default';
+
+        if (!name) {
+            statusEl.textContent = 'Please enter your name!';
+            statusEl.style.color = '#e74c3c';
+            nameInput.focus();
+            return;
+        }
+
+        statusEl.textContent = 'Connecting...';
+        statusEl.style.color = '#4ecdc4';
+
+        socket = io({ transports: ['websocket', 'polling'], reconnection: true });
+
+        socket.on('connect', () => {
+            statusEl.textContent = 'Connected! Joining room...';
+            // Get player appearance from existing player config
+            const playerCfg = CHARACTER_CONFIGS.find(c => c.isPlayer) || CHARACTER_CONFIGS[0];
+            socket.emit('room:join', {
+                roomId: room,
+                playerName: name,
+                character: {
+                    name: name,
+                    role: playerCfg.role || 'Employee',
+                    skinTone: playerCfg.skinTone || '#f5d0b0',
+                    hairColor: playerCfg.hairColor || '#2a1a0a',
+                    hairStyle: playerCfg.hairStyle || 'short',
+                    shirtColor: playerCfg.shirtColor || '#3498db'
+                }
+            });
+        });
+
+        socket.on('connect_error', () => {
+            statusEl.textContent = 'Cannot reach server. Try Play Offline instead.';
+            statusEl.style.color = '#e74c3c';
+        });
+
+        socket.on('state:snapshot', (data) => {
+            // First snapshot = we're in! Hide lobby
+            if (document.getElementById('mp-lobby-overlay').style.display !== 'none') {
+                document.getElementById('mp-lobby-overlay').style.display = 'none';
+                multiplayerMode = true;
+
+                // Initialize canvas if not done yet
+                if (!canvas) initCanvas();
+                if (!lastTime) requestAnimationFrame(gameLoop);
+
+                // Handle resize
+                window.addEventListener('resize', () => { initCanvas(); });
+            }
+
+            // Find our player ID
+            if (!myPlayerId && data.players) {
+                const us = data.players.find(p => p.id === `player_${socket.id}`);
+                if (us) {
+                    myPlayerId = us.characterId;
+                    gameState.selectedCharId = myPlayerId;
+                }
+            }
+
+            // Update game time from server
+            gameState.day = data.game.day;
+            gameState.time = data.game.time;
+            gameState.speed = data.game.speed;
+
+            // Rebuild characters from snapshot
+            const existingMap = new Map(gameState.characters.map(c => [c.id, c]));
+            const newChars = [];
+            for (const cd of data.characters) {
+                let char = existingMap.get(cd.id);
+                if (char) {
+                    // Update existing — snap position on first snapshot, lerp after
+                    _applySnapshotToChar(char, cd);
+                } else {
+                    // New character from server
+                    char = _createCharFromServer(cd);
+                }
+                newChars.push(char);
+            }
+            gameState.characters = newChars;
+        });
+
+        socket.on('state:delta', (data) => {
+            if (data.g) {
+                gameState.day = data.g.d;
+                gameState.time = data.g.m;
+            }
+            if (data.c) {
+                for (const compact of data.c) {
+                    const char = gameState.characters.find(c => c.id === compact.i);
+                    if (!char) continue;
+                    if (compact.x !== undefined && compact.y !== undefined) {
+                        char._prevX = char.x;
+                        char._prevY = char.y;
+                        char._serverX = compact.x;
+                        char._serverY = compact.y;
+                        char._interpStart = performance.now();
+                    }
+                    if (compact.f !== undefined) char.facingRight = compact.f === 1;
+                    if (compact.s !== undefined) char.state = compact.s;
+                    if (compact.ex !== undefined) char.expression = compact.ex;
+                    if (compact.ac !== undefined) {
+                        if (compact.ac === null) {
+                            char.currentAction = null;
+                            char.actionProgress = 0;
+                        } else if (!char.currentAction || char.currentAction.id !== compact.ac) {
+                            char.currentAction = ACTIONS.find(a => a.id === compact.ac) || { id: compact.ac, name: compact.ac };
+                            char.actionProgress = compact.ap || 0;
+                        } else {
+                            char.actionProgress = compact.ap || 0;
+                        }
+                    }
+                    if (compact.sp !== undefined && compact.sp !== null && compact.sp !== char.speechBubble) {
+                        char.speechBubble = compact.sp;
+                        char.speechTimer = 3000;
+                    }
+                }
+            }
+            if (data.n) {
+                for (const nd of data.n) {
+                    const char = gameState.characters.find(c => c.id === nd.i);
+                    if (!char) continue;
+                    char.needs.hunger = nd.h;
+                    char.needs.energy = nd.e;
+                    char.needs.social = nd.s;
+                    char.needs.comfort = nd.c;
+                    char.needs.fun = nd.f;
+                    char.needs.hygiene = nd.y;
+                    char.needs.bladder = nd.b;
+                }
+            }
+        });
+
+        socket.on('char:speech', (data) => {
+            const char = gameState.characters.find(c => c.id === data.charId);
+            if (char) {
+                char.speechBubble = data.text;
+                char.speechTimer = data.duration || 3000;
+            }
+        });
+
+        socket.on('room:playerJoined', (data) => {
+            console.log('[MP] ' + data.characterName + ' joined!');
+        });
+
+        socket.on('room:playerLeft', () => {
+            console.log('[MP] A player left.');
+        });
+
+        socket.on('event:weekly', (data) => {
+            showWeeklySummaryMP(data);
+        });
+    }
+
+    // Helper: create a local Character from server snapshot data
+    function _createCharFromServer(cd) {
+        const char = new Character({
+            id: cd.id, name: cd.name, isPlayer: cd.isPlayer,
+            x: cd.x, y: cd.y, role: cd.role || 'Employee',
+            skinTone: cd.appearance?.skinTone,
+            hairColor: cd.appearance?.hairColor,
+            hairStyle: cd.appearance?.hairStyle,
+            shirtColor: cd.appearance?.shirtColor,
+            pantsColor: cd.appearance?.pantsColor,
+            eyeColor: cd.appearance?.eyeColor,
+            personality: cd.personality || {}
+        });
+        char._serverX = cd.x;
+        char._serverY = cd.y;
+        char._prevX = cd.x;
+        char._prevY = cd.y;
+        char._interpStart = performance.now();
+        char.state = cd.state || 'idle';
+        char.facingRight = cd.facingRight !== undefined ? cd.facingRight : true;
+        char.expression = cd.expression || 'neutral';
+        char.slackPoints = cd.slackPoints || 0;
+        if (cd.needs) {
+            char.needs.hunger = cd.needs.hunger;
+            char.needs.energy = cd.needs.energy;
+            char.needs.social = cd.needs.social;
+            char.needs.comfort = cd.needs.comfort;
+            char.needs.fun = cd.needs.fun;
+            char.needs.hygiene = cd.needs.hygiene;
+            char.needs.bladder = cd.needs.bladder;
+        }
+        if (cd.currentAction) {
+            char.currentAction = ACTIONS.find(a => a.id === cd.currentAction.id) || cd.currentAction;
+            char.actionProgress = cd.currentAction.progress || 0;
+        }
+        if (cd.speechBubble) {
+            char.speechBubble = cd.speechBubble;
+            char.speechTimer = 3000;
+        }
+        // Mark as our player if IDs match
+        if (myPlayerId && cd.id === myPlayerId) char.isPlayer = true;
+        return char;
+    }
+
+    // Helper: update existing local Character from server snapshot
+    function _applySnapshotToChar(char, cd) {
+        char.name = cd.name;
+        char.role = cd.role || char.role;
+        char.state = cd.state || 'idle';
+        char.facingRight = cd.facingRight !== undefined ? cd.facingRight : char.facingRight;
+        char.expression = cd.expression || 'neutral';
+        char.slackPoints = cd.slackPoints || 0;
+        if (cd.appearance) char.appearance = { ...char.appearance, ...cd.appearance };
+        if (cd.needs) {
+            char.needs.hunger = cd.needs.hunger;
+            char.needs.energy = cd.needs.energy;
+            char.needs.social = cd.needs.social;
+            char.needs.comfort = cd.needs.comfort;
+            char.needs.fun = cd.needs.fun;
+            char.needs.hygiene = cd.needs.hygiene;
+            char.needs.bladder = cd.needs.bladder;
+        }
+        if (cd.currentAction) {
+            char.currentAction = ACTIONS.find(a => a.id === cd.currentAction.id) || cd.currentAction;
+            char.actionProgress = cd.currentAction.progress || 0;
+        } else {
+            char.currentAction = null;
+            char.actionProgress = 0;
+        }
+        // Update server position for interpolation
+        const dx = cd.x - (char._serverX || char.x);
+        const dy = cd.y - (char._serverY || char.y);
+        if (dx * dx + dy * dy > 2500) {
+            // Big teleport — snap
+            char.x = cd.x; char.y = cd.y;
+            char._serverX = cd.x; char._serverY = cd.y;
+            char._prevX = cd.x; char._prevY = cd.y;
+        } else {
+            char._prevX = char.x; char._prevY = char.y;
+            char._serverX = cd.x; char._serverY = cd.y;
+            char._interpStart = performance.now();
+        }
+        if (myPlayerId && cd.id === myPlayerId) char.isPlayer = true;
+    }
+
+    // Multiplayer weekly summary (data comes from server)
+    function showWeeklySummaryMP(data) {
+        const modal = document.getElementById('end-of-day-modal');
+        if (!modal) return;
+        document.getElementById('weekly-quote').textContent = data.quote || '';
+        const rank = data.rank || { name: 'Unknown', color: '#888' };
+        document.getElementById('weekly-rank').textContent = rank.name;
+        document.getElementById('weekly-rank').style.color = rank.color;
+        const stats = data.stats || {};
+        document.getElementById('stat-slack').textContent = stats.slackPoints || 0;
+        document.getElementById('stat-work').textContent = stats.workDone || 0;
+        document.getElementById('stat-meetings').textContent = stats.meetingsAvoided || 0;
+        document.getElementById('stat-coffee').textContent = stats.coffeeDrunk || 0;
+        document.getElementById('stat-bathroom').textContent = stats.bathroomTrips || 0;
+        modal.style.display = 'flex';
+        gameState.paused = false; // Don't pause in multiplayer, server keeps running
+    }
+
+    // Expose lobby functions globally (onclick attributes need them)
+    window.startOffline = startOffline;
+    window.startMultiplayer = startMultiplayer;
+
+    // Start — show lobby if served from server, otherwise init directly
+    if (window.location.protocol === 'file:' || typeof io === 'undefined') {
+        init();
+    } else {
+        document.getElementById('mp-lobby-overlay').style.display = 'flex';
+    }
     </script>
 </body>
 </html>
