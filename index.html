@@ -934,6 +934,44 @@
             <input type="text" id="mp-name" placeholder="Enter your name..." maxlength="12" value="">
             <label for="mp-room">Room Name</label>
             <input type="text" id="mp-room" placeholder="default" maxlength="50" value="default">
+            <div style="margin-top:8px;">
+                <label>Skin Tone</label>
+                <div class="color-picker" id="mp-skin-picker" style="margin-bottom:8px;">
+                    <div class="color-option selected" data-color="#f5e0c0" style="background:#f5e0c0"></div>
+                    <div class="color-option" data-color="#f5d0b0" style="background:#f5d0b0"></div>
+                    <div class="color-option" data-color="#deb887" style="background:#deb887"></div>
+                    <div class="color-option" data-color="#c68642" style="background:#c68642"></div>
+                    <div class="color-option" data-color="#8d5524" style="background:#8d5524"></div>
+                    <div class="color-option" data-color="#6B4423" style="background:#6B4423"></div>
+                </div>
+                <label>Hair Style</label>
+                <div class="style-picker" id="mp-hair-style-picker" style="margin-bottom:8px;">
+                    <div class="style-option selected" data-style="short">Short</div>
+                    <div class="style-option" data-style="spiky">Spiky</div>
+                    <div class="style-option" data-style="bob">Bob</div>
+                    <div class="style-option" data-style="long">Long</div>
+                    <div class="style-option" data-style="curly">Curly</div>
+                    <div class="style-option" data-style="bald">Bald</div>
+                </div>
+                <label>Hair Color</label>
+                <div class="color-picker" id="mp-hair-color-picker" style="margin-bottom:8px;">
+                    <div class="color-option selected" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+                    <div class="color-option" data-color="#3a2a1a" style="background:#3a2a1a"></div>
+                    <div class="color-option" data-color="#8B4513" style="background:#8B4513"></div>
+                    <div class="color-option" data-color="#d4a84b" style="background:#d4a84b"></div>
+                    <div class="color-option" data-color="#c94420" style="background:#c94420"></div>
+                    <div class="color-option" data-color="#888888" style="background:#888888"></div>
+                </div>
+                <label>Shirt Color</label>
+                <div class="color-picker" id="mp-shirt-picker" style="margin-bottom:8px;">
+                    <div class="color-option selected" data-color="#3498db" style="background:#3498db"></div>
+                    <div class="color-option" data-color="#e94560" style="background:#e94560"></div>
+                    <div class="color-option" data-color="#27ae60" style="background:#27ae60"></div>
+                    <div class="color-option" data-color="#9b59b6" style="background:#9b59b6"></div>
+                    <div class="color-option" data-color="#f39c12" style="background:#f39c12"></div>
+                    <div class="color-option" data-color="#1abc9c" style="background:#1abc9c"></div>
+                </div>
+            </div>
             <div class="mp-rooms" id="mp-rooms">
                 <div class="mp-rooms-title">🌐 Active Rooms</div>
                 <div class="mp-rooms-list" id="mp-rooms-list">
@@ -1431,7 +1469,7 @@
 
     const SAVE_KEY = 'corporate-sims-save';
     let lastSaveTime = 0;
-    const SAVE_INTERVAL = 30000; // Auto-save every 30 seconds
+    const SAVE_INTERVAL = 10000; // Auto-save every 10 seconds
 
     function serializeCharacter(char) {
         // Convert relationships Map to plain object
@@ -4859,11 +4897,12 @@
                 renderSelectedCharPanel();
             }
 
-            // Auto-save every 30 seconds
-            if (timestamp - lastSaveTime > SAVE_INTERVAL) {
-                lastSaveTime = timestamp;
-                saveGame();
-            }
+        }
+
+        // Auto-save (runs even when paused, only in single-player)
+        if (!multiplayerMode && timestamp - lastSaveTime > SAVE_INTERVAL) {
+            lastSaveTime = timestamp;
+            saveGame();
         }
 
         render();
@@ -4941,7 +4980,10 @@
         gameState.characters.push(newChar);
         closeCharacterCreator();
         renderCharacterList();
-        if (!multiplayerMode) saveGame(); // Persist new character
+        if (!multiplayerMode) {
+            saveGame();
+            console.log('[Save] Character "' + name + '" saved!');
+        }
 
         // Show welcome message
         newChar.say(`Hi! I'm ${name}, the new ${role}!`, 4000);
@@ -5229,18 +5271,21 @@
 
         socket.on('connect', () => {
             statusEl.textContent = 'Connected! Joining room...';
-            // Get player appearance from existing player config
-            const playerCfg = CHARACTER_CONFIGS.find(c => c.isPlayer) || CHARACTER_CONFIGS[0];
+            // Read appearance from lobby pickers
+            const skinTone = (document.querySelector('#mp-skin-picker .selected') || {}).dataset?.color || '#f5d0b0';
+            const hairColor = (document.querySelector('#mp-hair-color-picker .selected') || {}).dataset?.color || '#2a1a0a';
+            const hairStyle = (document.querySelector('#mp-hair-style-picker .selected') || {}).dataset?.style || 'short';
+            const shirtColor = (document.querySelector('#mp-shirt-picker .selected') || {}).dataset?.color || '#3498db';
             socket.emit('room:join', {
                 roomId: room,
                 playerName: name,
                 character: {
                     name: name,
-                    role: playerCfg.role || 'Employee',
-                    skinTone: playerCfg.skinTone || '#f5d0b0',
-                    hairColor: playerCfg.hairColor || '#2a1a0a',
-                    hairStyle: playerCfg.hairStyle || 'short',
-                    shirtColor: playerCfg.shirtColor || '#3498db'
+                    role: 'Employee',
+                    skinTone: skinTone,
+                    hairColor: hairColor,
+                    hairStyle: hairStyle,
+                    shirtColor: shirtColor
                 }
             });
         });
